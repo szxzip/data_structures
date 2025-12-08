@@ -61,7 +61,7 @@
 6. 编译。
 
    ```
-   gcc -o run.exe sample.cpp `pkg-config --cflags --libs gtk+-3.0` -mwindows
+   g++ -o run.exe sample.cpp `pkg-config --cflags --libs gtk+-3.0` -mwindows
    ```
    
-   `gcc` 是 C 语言编译工具。`-o run.exe` 代表输出的可执行文件。`sample.cpp` 编译 sample.cpp。`pkg-config --cflags --libs gtk+-3.0` 添加 gtk3。
+   `gcc` 是 C++ 编译工具。`-o run.exe` 代表输出的可执行文件。`sample.cpp` 编译 sample.cpp。`pkg-config --cflags --libs gtk+-3.0` 添加 gtk3。
