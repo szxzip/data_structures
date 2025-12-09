@@ -55,7 +55,7 @@
    比如
    
    ```
-   cd C:/users/me/Desktop/data/data1
+   cd C:/users/me/Desktop/data_structures/1/
    ```
    
 6. 编译。
