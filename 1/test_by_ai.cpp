@@ -6,37 +6,69 @@
 #include <fstream>
 #include <gtk/gtk.h>
 #include <iostream>
-#include <map>
 #include <sstream>
 #include <stack>
-#include <string>
 #include <vector>
-
 using namespace std;
 
-// 颜色结构体
-struct Color {
-    double r, g, b;
-};
-
-// 顶点结构体（用于图形显示）
-struct Vertex {
-    int id;
-    double x, y;
-    bool isArticulation;
-    Color color;
-};
-
-// 边结构体
-struct Edge {
-    int from, to;
-};
-
-// 图类
+// ==============================
+// 第一部分：图数据结构和算法模块
+// ==============================
 class Graph {
 private:
-    int V; // 顶点数
-    vector<vector<int>> adj; // 邻接表
+    int V;
+    vector<vector<int>> adj;
+
+public:
+    Graph(int vertices = 0)
+        : V(vertices)
+    {
+        adj.resize(V);
+    }
+
+    void init(int vertices)
+    {
+        V = vertices;
+        adj.resize(V);
+    }
+
+    void addEdge(int u, int v)
+    {
+        if (u < V && v < V) {
+            adj[u].push_back(v);
+            adj[v].push_back(u);
+        }
+    }
+
+    const vector<vector<int>>& getAdjacencyList() const { return adj; }
+    int getVertexCount() const { return V; }
+    vector<int> getNeighbors(int v) const
+    {
+        if (v >= 0 && v < V)
+            return adj[v];
+        return {};
+    }
+
+    int getEdgeCount() const
+    {
+        int count = 0;
+        for (int i = 0; i < V; i++) {
+            count += adj[i].size();
+        }
+        return count / 2;
+    }
+
+    void clear()
+    {
+        V = 0;
+        adj.clear();
+    }
+};
+
+// 关节点查找类
+class ArticulationFinder {
+private:
+    const Graph* graph;
     vector<bool> visited;
     vector<int> disc;
     vector<int> low;
@@ -50,7 +82,7 @@ private:
         visited[u] = true;
         disc[u] = low[u] = ++time;
 
-        for (int v : adj[u]) {
+        for (int v : graph->getNeighbors(u)) {
             if (!visited[v]) {
                 children++;
                 parent[v] = u;
@@ -70,41 +102,16 @@ private:
     }
 
 public:
-    Graph(int vertices = 0)
-        : V(vertices)
-        , time(0)
+    vector<int> findArticulationPoints(const Graph& g)
     {
-        if (vertices > 0) {
-            init(vertices);
-        }
-    }
+        graph = &g;
+        int V = g.getVertexCount();
 
-    void init(int vertices)
-    {
-        V = vertices;
-        adj.resize(V);
         visited.resize(V, false);
         disc.resize(V, -1);
         low.resize(V, -1);
         parent.resize(V, -1);
         isArticulation.resize(V, false);
-    }
-
-    void addEdge(int u, int v)
-    {
-        if (u >= 0 && u < V && v >= 0 && v < V) {
-            adj[u].push_back(v);
-            adj[v].push_back(u);
-        }
-    }
-
-    vector<int> findArticulationPoints()
-    {
-        fill(visited.begin(), visited.end(), false);
-        fill(disc.begin(), disc.end(), -1);
-        fill(low.begin(), low.end(), -1);
-        fill(parent.begin(), parent.end(), -1);
-        fill(isArticulation.begin(), isArticulation.end(), false);
         time = 0;
 
         for (int i = 0; i < V; i++) {
@@ -121,202 +128,327 @@ public:
         }
         return points;
     }
+};
 
-    int getVertexCount() const { return V; }
-    const vector<vector<int>>& getAdjacencyList() const { return adj; }
-    vector<int> getNeighbors(int v) const
+// 图生成器
+class GraphGenerator {
+public:
+    static Graph generateRandomGraph(int vertices, int edges)
     {
-        if (v >= 0 && v < V)
-            return adj[v];
-        return {};
+        srand(time(NULL));
+        Graph g(vertices);
+
+        // 先确保连通性：生成树
+        for (int i = 1; i < vertices; i++) {
+            int parent = rand() % i;
+            g.addEdge(i, parent);
+        }
+
+        // 添加额外边
+        for (int i = vertices - 1; i < edges; i++) {
+            int u = rand() % vertices;
+            int v = rand() % vertices;
+            if (u != v) {
+                g.addEdge(u, v);
+            }
+        }
+        return g;
     }
 
-    bool checkIfArticulation(int v)
+    static Graph createExample1()
     {
-        findArticulationPoints();
-        return (v >= 0 && v < V) ? isArticulation[v] : false;
+        Graph g(7);
+        g.addEdge(0, 1);
+        g.addEdge(0, 2);
+        g.addEdge(1, 2);
+        g.addEdge(1, 3);
+        g.addEdge(1, 4);
+        g.addEdge(3, 4);
+        g.addEdge(3, 5);
+        g.addEdge(4, 5);
+        g.addEdge(5, 6);
+        return g;
     }
 
-    // 尝试移除关节点
-    bool removeArticulation(int v)
+    static Graph createExample2()
     {
-        if (v < 0 || v >= V || !isArticulation[v])
+        Graph g(5);
+        g.addEdge(0, 1);
+        g.addEdge(0, 2);
+        g.addEdge(0, 3);
+        g.addEdge(1, 2);
+        g.addEdge(1, 4);
+        g.addEdge(2, 3);
+        g.addEdge(3, 4);
+        return g;
+    }
+
+    static Graph createTree(int vertices)
+    {
+        Graph g(vertices);
+        for (int i = 1; i < vertices; i++) {
+            int parent = rand() % i;
+            g.addEdge(i, parent);
+        }
+        return g;
+    }
+};
+
+// ==============================
+// 第二部分：文件操作和数据处理模块
+// ==============================
+class FileManager {
+public:
+    static Graph loadFromFile(const string& filename)
+    {
+        ifstream file(filename);
+        if (!file) {
+            throw runtime_error("无法打开文件: " + filename);
+        }
+
+        int vertices, edges;
+        file >> vertices >> edges;
+
+        Graph g(vertices);
+        for (int i = 0; i < edges; i++) {
+            int u, v;
+            file >> u >> v;
+            g.addEdge(u, v);
+        }
+
+        file.close();
+        return g;
+    }
+
+    static bool saveToFile(const Graph& g, const string& filename)
+    {
+        ofstream file(filename);
+        if (!file)
             return false;
 
-        vector<int> neighbors = adj[v];
+        int V = g.getVertexCount();
+        int edgeCount = 0;
+        const auto& adj = g.getAdjacencyList();
+
+        for (int i = 0; i < V; i++) {
+            for (int neighbor : adj[i]) {
+                if (i < neighbor)
+                    edgeCount++;
+            }
+        }
+
+        file << V << " " << edgeCount << endl;
+
+        for (int i = 0; i < V; i++) {
+            for (int neighbor : adj[i]) {
+                if (i < neighbor) {
+                    file << i << " " << neighbor << endl;
+                }
+            }
+        }
+
+        file.close();
+        return true;
+    }
+
+    static bool validateGraphFile(const string& filename)
+    {
+        ifstream file(filename);
+        if (!file)
+            return false;
+
+        int vertices, edges;
+        if (!(file >> vertices >> edges)) {
+            file.close();
+            return false;
+        }
+
+        for (int i = 0; i < edges; i++) {
+            int u, v;
+            if (!(file >> u >> v)) {
+                file.close();
+                return false;
+            }
+            if (u < 0 || u >= vertices || v < 0 || v >= vertices) {
+                file.close();
+                return false;
+            }
+        }
+
+        file.close();
+        return true;
+    }
+};
+
+// 图修改器
+class GraphModifier {
+public:
+    static bool removeArticulation(Graph& g, int vertex)
+    {
+        auto neighbors = g.getNeighbors(vertex);
         if (neighbors.size() < 2)
             return false;
 
         // 在邻居之间添加边
         bool added = false;
-        for (int i = 0; i < neighbors.size(); i++) {
-            for (int j = i + 1; j < neighbors.size(); j++) {
-                int u1 = neighbors[i];
-                int u2 = neighbors[j];
+        for (size_t i = 0; i < neighbors.size(); i++) {
+            for (size_t j = i + 1; j < neighbors.size(); j++) {
+                int u = neighbors[i];
+                int v = neighbors[j];
 
                 // 检查边是否已存在
-                bool exists = false;
-                for (int n : adj[u1]) {
-                    if (n == u2) {
-                        exists = true;
-                        break;
-                    }
-                }
+                auto uNeighbors = g.getNeighbors(u);
+                bool exists = find(uNeighbors.begin(), uNeighbors.end(), v) != uNeighbors.end();
 
                 if (!exists) {
-                    addEdge(u1, u2);
+                    g.addEdge(u, v);
                     added = true;
                 }
             }
         }
-
         return added;
-    }
-
-    void clear()
-    {
-        V = 0;
-        adj.clear();
-        visited.clear();
-        disc.clear();
-        low.clear();
-        parent.clear();
-        isArticulation.clear();
     }
 };
 
+// ==============================
+// 第三部分：GUI界面模块
+// ==============================
+struct VertexDisplay {
+    int id;
+    double x, y;
+    bool isArticulation;
+    bool isSelected;
+};
+
+struct EdgeDisplay {
+    int from, to;
+};
+
 // 全局变量
-Graph g;
-vector<Vertex> vertices;
-vector<Edge> edges;
-vector<int> articulationPoints;
+Graph currentGraph;
+ArticulationFinder finder;
+vector<VertexDisplay> verticesDisplay;
+vector<EdgeDisplay> edgesDisplay;
+vector<int> currentArticulations;
+
 GtkWidget* window;
 GtkWidget* drawing_area;
 GtkWidget* status_label;
 GtkWidget* info_label;
+GtkWidget* vertex_count_label;
+GtkWidget* edge_count_label;
+GtkWidget* articulation_count_label;
+
 bool showArticulations = true;
 bool showLabels = true;
 int selectedVertex = -1;
-double canvas_width = 800;
-double canvas_height = 600;
 
 // 颜色定义
-const Color VERTEX_NORMAL = { 0.3, 0.5, 0.8 };
-const Color VERTEX_ARTICULATION = { 1.0, 0.3, 0.3 };
-const Color VERTEX_SELECTED = { 0.2, 0.8, 0.2 };
-const Color EDGE_COLOR = { 0.5, 0.5, 0.5 };
+const double VERTEX_COLOR[3] = { 0.3, 0.5, 0.8 };
+const double ARTICULATION_COLOR[3] = { 1.0, 0.3, 0.3 };
+const double SELECTED_COLOR[3] = { 0.2, 0.8, 0.2 };
+const double EDGE_COLOR[3] = { 0.5, 0.5, 0.5 };
 
-// 生成随机布局
-void generateLayout()
+// 布局函数
+void layoutVertices()
 {
-    vertices.clear();
-    int V = g.getVertexCount();
+    verticesDisplay.clear();
+    edgesDisplay.clear();
 
-    // 生成圆形布局
-    double center_x = canvas_width / 2;
-    double center_y = canvas_height / 2;
-    double radius = min(canvas_width, canvas_height) * 0.35;
+    int V = currentGraph.getVertexCount();
+    const auto& adj = currentGraph.getAdjacencyList();
+
+    // 圆形布局
+    double center_x = 400;
+    double center_y = 300;
+    double radius = 250;
 
     for (int i = 0; i < V; i++) {
+        VertexDisplay vd;
+        vd.id = i;
         double angle = 2 * M_PI * i / V;
-        Vertex v;
-        v.id = i;
-        v.x = center_x + radius * cos(angle);
-        v.y = center_y + radius * sin(angle);
-        v.isArticulation = false;
-        v.color = VERTEX_NORMAL;
-        vertices.push_back(v);
+        vd.x = center_x + radius * cos(angle);
+        vd.y = center_y + radius * sin(angle);
+        vd.isArticulation = false;
+        vd.isSelected = (i == selectedVertex);
+        verticesDisplay.push_back(vd);
     }
 
-    // 更新关节点状态
-    articulationPoints = g.findArticulationPoints();
-    for (int ap : articulationPoints) {
-        if (ap < vertices.size()) {
-            vertices[ap].isArticulation = true;
-            vertices[ap].color = VERTEX_ARTICULATION;
-        }
-    }
-
-    // 构建边列表
-    edges.clear();
-    const auto& adj = g.getAdjacencyList();
+    // 构建边
     for (int i = 0; i < V; i++) {
         for (int neighbor : adj[i]) {
-            if (i < neighbor) { // 避免重复
-                Edge e;
-                e.from = i;
-                e.to = neighbor;
-                edges.push_back(e);
+            if (i < neighbor) {
+                EdgeDisplay ed;
+                ed.from = i;
+                ed.to = neighbor;
+                edgesDisplay.push_back(ed);
             }
         }
     }
-}
 
-// 查找最近的顶点
-int findVertexAt(double x, double y, double threshold = 20)
-{
-    for (const auto& v : vertices) {
-        double dx = v.x - x;
-        double dy = v.y - y;
-        if (dx * dx + dy * dy < threshold * threshold) {
-            return v.id;
+    // 标记关节点
+    currentArticulations = finder.findArticulationPoints(currentGraph);
+    for (int ap : currentArticulations) {
+        if (ap < verticesDisplay.size()) {
+            verticesDisplay[ap].isArticulation = true;
         }
     }
-    return -1;
 }
 
-// 绘图函数
+// 绘图回调函数
 gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
 {
-    // 设置背景色
+    // 背景
     cairo_set_source_rgb(cr, 0.95, 0.95, 0.95);
     cairo_paint(cr);
 
     // 绘制边
-    cairo_set_source_rgb(cr, EDGE_COLOR.r, EDGE_COLOR.g, EDGE_COLOR.b);
+    cairo_set_source_rgb(cr, EDGE_COLOR[0], EDGE_COLOR[1], EDGE_COLOR[2]);
     cairo_set_line_width(cr, 2);
 
-    for (const auto& e : edges) {
-        if (e.from < vertices.size() && e.to < vertices.size()) {
-            cairo_move_to(cr, vertices[e.from].x, vertices[e.from].y);
-            cairo_line_to(cr, vertices[e.to].x, vertices[e.to].y);
+    for (const auto& edge : edgesDisplay) {
+        if (edge.from < verticesDisplay.size() && edge.to < verticesDisplay.size()) {
+            const auto& v1 = verticesDisplay[edge.from];
+            const auto& v2 = verticesDisplay[edge.to];
+            cairo_move_to(cr, v1.x, v1.y);
+            cairo_line_to(cr, v2.x, v2.y);
             cairo_stroke(cr);
         }
     }
 
     // 绘制顶点
-    for (const auto& v : vertices) {
+    for (const auto& vd : verticesDisplay) {
         // 选择颜色
-        Color color;
-        if (selectedVertex == v.id) {
-            color = VERTEX_SELECTED;
-        } else if (showArticulations && v.isArticulation) {
-            color = VERTEX_ARTICULATION;
+        const double* color;
+        if (vd.isSelected) {
+            color = SELECTED_COLOR;
+        } else if (showArticulations && vd.isArticulation) {
+            color = ARTICULATION_COLOR;
         } else {
-            color = v.color;
+            color = VERTEX_COLOR;
         }
 
-        // 绘制圆
-        cairo_set_source_rgb(cr, color.r, color.g, color.b);
-        cairo_arc(cr, v.x, v.y, 20, 0, 2 * M_PI);
+        // 绘制圆形
+        cairo_set_source_rgb(cr, color[0], color[1], color[2]);
+        cairo_arc(cr, vd.x, vd.y, 20, 0, 2 * M_PI);
         cairo_fill_preserve(cr);
 
-        // 绘制边框
+        // 边框
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_set_line_width(cr, 2);
         cairo_stroke(cr);
 
-        // 绘制标签
+        // 标签
         if (showLabels) {
             cairo_set_source_rgb(cr, 1, 1, 1);
             cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
             cairo_set_font_size(cr, 14);
 
-            string label = to_string(v.id);
+            string label = to_string(vd.id);
             cairo_text_extents_t extents;
             cairo_text_extents(cr, label.c_str(), &extents);
 
-            cairo_move_to(cr, v.x - extents.width / 2, v.y + extents.height / 2);
+            cairo_move_to(cr, vd.x - extents.width / 2, vd.y + extents.height / 2);
             cairo_show_text(cr, label.c_str());
         }
     }
@@ -328,243 +460,177 @@ gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
 gboolean button_press_callback(GtkWidget* widget, GdkEventButton* event, gpointer data)
 {
     if (event->button == GDK_BUTTON_PRIMARY) {
-        selectedVertex = findVertexAt(event->x, event->y);
+        double click_x = event->x;
+        double click_y = event->y;
 
-        // 更新状态标签
-        if (selectedVertex >= 0) {
-            bool isAP = g.checkIfArticulation(selectedVertex);
-            string status = "顶点 " + to_string(selectedVertex) + " (" + (isAP ? "关节点" : "非关节点") + ")" + " - 邻居: ";
-
-            auto neighbors = g.getNeighbors(selectedVertex);
-            for (size_t i = 0; i < neighbors.size(); i++) {
-                status += to_string(neighbors[i]);
-                if (i < neighbors.size() - 1)
-                    status += ", ";
+        // 查找点击的顶点
+        selectedVertex = -1;
+        for (const auto& vd : verticesDisplay) {
+            double dx = vd.x - click_x;
+            double dy = vd.y - click_y;
+            if (dx * dx + dy * dy < 400) { // 半径20的平方
+                selectedVertex = vd.id;
+                break;
             }
-
-            gtk_label_set_text(GTK_LABEL(info_label), status.c_str());
         }
 
+        // 更新显示
+        layoutVertices();
         gtk_widget_queue_draw(drawing_area);
+
+        // 更新信息
+        if (selectedVertex >= 0) {
+            string info = "顶点 " + to_string(selectedVertex);
+            bool isAP = false;
+            for (int ap : currentArticulations) {
+                if (ap == selectedVertex) {
+                    isAP = true;
+                    break;
+                }
+            }
+            info += (isAP ? " (关节点)" : " (非关节点)");
+
+            auto neighbors = currentGraph.getNeighbors(selectedVertex);
+            info += "\n邻居: ";
+            for (size_t i = 0; i < neighbors.size(); i++) {
+                info += to_string(neighbors[i]);
+                if (i < neighbors.size() - 1)
+                    info += ", ";
+            }
+
+            gtk_label_set_text(GTK_LABEL(info_label), info.c_str());
+        }
     }
     return TRUE;
 }
 
-// 创建示例图1
-void create_example_graph1()
+// 更新状态栏
+void updateStatus(const string& message)
 {
-    g.init(7);
-    g.addEdge(0, 1);
-    g.addEdge(0, 2);
-    g.addEdge(1, 2);
-    g.addEdge(1, 3);
-    g.addEdge(1, 4);
-    g.addEdge(3, 4);
-    g.addEdge(3, 5);
-    g.addEdge(4, 5);
-    g.addEdge(5, 6);
+    gtk_label_set_text(GTK_LABEL(status_label), message.c_str());
+}
 
-    generateLayout();
+// 更新统计信息
+void updateStatistics()
+{
+    int vertices = currentGraph.getVertexCount();
+    int edges = currentGraph.getEdgeCount();
+    int articulations = currentArticulations.size();
 
-    string status = "示例图1已加载。关节点: ";
-    auto aps = g.findArticulationPoints();
-    for (size_t i = 0; i < aps.size(); i++) {
-        status += to_string(aps[i]);
-        if (i < aps.size() - 1)
-            status += ", ";
-    }
-    gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
+    string vtext = "顶点数: " + to_string(vertices);
+    string etext = "边数: " + to_string(edges);
+    string atext = "关节点数: " + to_string(articulations);
+
+    gtk_label_set_text(GTK_LABEL(vertex_count_label), vtext.c_str());
+    gtk_label_set_text(GTK_LABEL(edge_count_label), etext.c_str());
+    gtk_label_set_text(GTK_LABEL(articulation_count_label), atext.c_str());
+}
+
+// 按钮回调函数
+void load_example1(GtkWidget* widget, gpointer data)
+{
+    currentGraph = GraphGenerator::createExample1();
+    layoutVertices();
+    updateStatus("示例图1已加载");
+    updateStatistics();
     gtk_widget_queue_draw(drawing_area);
 }
 
-// 创建示例图2（双连通图）
-void create_example_graph2()
+void load_example2(GtkWidget* widget, gpointer data)
 {
-    g.init(5);
-    g.addEdge(0, 1);
-    g.addEdge(0, 2);
-    g.addEdge(0, 3);
-    g.addEdge(1, 2);
-    g.addEdge(1, 4);
-    g.addEdge(2, 3);
-    g.addEdge(3, 4);
-
-    generateLayout();
-
-    auto aps = g.findArticulationPoints();
-    if (aps.empty()) {
-        gtk_label_set_text(GTK_LABEL(status_label), "示例图2已加载。这是一个双连通图，没有关节点。");
-    }
+    currentGraph = GraphGenerator::createExample2();
+    layoutVertices();
+    updateStatus("示例图2已加载（双连通图）");
+    updateStatistics();
     gtk_widget_queue_draw(drawing_area);
 }
 
-// 创建树状图
-void create_tree_graph()
+void generate_random(GtkWidget* widget, gpointer data)
 {
-    g.init(6);
-    g.addEdge(0, 1);
-    g.addEdge(0, 2);
-    g.addEdge(1, 3);
-    g.addEdge(1, 4);
-    g.addEdge(2, 5);
-
-    generateLayout();
-
-    string status = "树状图已加载。关节点: ";
-    auto aps = g.findArticulationPoints();
-    for (size_t i = 0; i < aps.size(); i++) {
-        status += to_string(aps[i]);
-        if (i < aps.size() - 1)
-            status += ", ";
-    }
-    gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
+    currentGraph = GraphGenerator::generateRandomGraph(8, 12);
+    layoutVertices();
+    updateStatus("随机图已生成");
+    updateStatistics();
     gtk_widget_queue_draw(drawing_area);
 }
 
-// 随机生成图
-void create_random_graph()
+void find_articulations(GtkWidget* widget, gpointer data)
 {
-    srand(time(NULL));
-    int vertices = rand() % 8 + 5; // 5-12个顶点
-    int edges = vertices + rand() % (vertices * 2);
-
-    g.init(vertices);
-
-    // 确保连通性：先生成树
-    for (int i = 1; i < vertices; i++) {
-        int parent = rand() % i;
-        g.addEdge(i, parent);
+    if (currentGraph.getVertexCount() == 0) {
+        updateStatus("请先加载图");
+        return;
     }
 
-    // 添加额外边
-    for (int i = vertices - 1; i < edges; i++) {
-        int u = rand() % vertices;
-        int v = rand() % vertices;
-        if (u != v) {
-            g.addEdge(u, v);
+    currentArticulations = finder.findArticulationPoints(currentGraph);
+    layoutVertices();
+
+    string msg = "找到 " + to_string(currentArticulations.size()) + " 个关节点";
+    if (!currentArticulations.empty()) {
+        msg += ": ";
+        for (size_t i = 0; i < currentArticulations.size(); i++) {
+            msg += to_string(currentArticulations[i]);
+            if (i < currentArticulations.size() - 1)
+                msg += ", ";
         }
     }
 
-    generateLayout();
+    updateStatus(msg);
+    updateStatistics();
+    gtk_widget_queue_draw(drawing_area);
+}
 
-    string status = "随机图已生成。顶点数: " + to_string(vertices) + ", 边数: " + to_string(edges) + "。关节点: ";
-    auto aps = g.findArticulationPoints();
-    if (aps.empty()) {
-        status += "无";
+void remove_articulation(GtkWidget* widget, gpointer data)
+{
+    if (selectedVertex < 0) {
+        updateStatus("请先选择一个顶点");
+        return;
+    }
+
+    bool isAP = false;
+    for (int ap : currentArticulations) {
+        if (ap == selectedVertex) {
+            isAP = true;
+            break;
+        }
+    }
+
+    if (!isAP) {
+        updateStatus("选中的顶点不是关节点");
+        return;
+    }
+
+    if (GraphModifier::removeArticulation(currentGraph, selectedVertex)) {
+        currentArticulations = finder.findArticulationPoints(currentGraph);
+        layoutVertices();
+        updateStatus("已尝试移除关节点 " + to_string(selectedVertex));
+        updateStatistics();
+        gtk_widget_queue_draw(drawing_area);
     } else {
-        for (size_t i = 0; i < aps.size(); i++) {
-            status += to_string(aps[i]);
-            if (i < aps.size() - 1)
-                status += ", ";
-        }
-    }
-    gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
-    gtk_widget_queue_draw(drawing_area);
-}
-
-// 查找关节点
-void find_articulations()
-{
-    articulationPoints = g.findArticulationPoints();
-
-    // 更新顶点颜色
-    for (auto& v : vertices) {
-        v.isArticulation = false;
-        v.color = VERTEX_NORMAL;
-    }
-
-    for (int ap : articulationPoints) {
-        if (ap < vertices.size()) {
-            vertices[ap].isArticulation = true;
-            vertices[ap].color = VERTEX_ARTICULATION;
-        }
-    }
-
-    string status = "关节点查找完成。找到 " + to_string(articulationPoints.size()) + " 个关节点";
-    if (!articulationPoints.empty()) {
-        status += ": ";
-        for (size_t i = 0; i < articulationPoints.size(); i++) {
-            status += to_string(articulationPoints[i]);
-            if (i < articulationPoints.size() - 1)
-                status += ", ";
-        }
-    }
-
-    gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
-    gtk_widget_queue_draw(drawing_area);
-}
-
-// 移除选中的关节点
-void remove_articulation()
-{
-    if (selectedVertex >= 0 && g.checkIfArticulation(selectedVertex)) {
-        if (g.removeArticulation(selectedVertex)) {
-            // 重新布局
-            generateLayout();
-
-            string status = "顶点 " + to_string(selectedVertex) + " 已从关节点移除。";
-            gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
-            gtk_widget_queue_draw(drawing_area);
-        } else {
-            gtk_label_set_text(GTK_LABEL(status_label), "移除关节点失败。");
-        }
-    } else {
-        gtk_label_set_text(GTK_LABEL(status_label), "请先选择一个关节点。");
+        updateStatus("移除关节点失败");
     }
 }
 
-// 切换关节点显示
-void toggle_articulations(GtkToggleButton* button, gpointer data)
+void load_from_file(GtkWidget* widget, gpointer data)
 {
-    showArticulations = gtk_toggle_button_get_active(button);
-    gtk_widget_queue_draw(drawing_area);
-}
-
-// 切换标签显示
-void toggle_labels(GtkToggleButton* button, gpointer data)
-{
-    showLabels = gtk_toggle_button_get_active(button);
-    gtk_widget_queue_draw(drawing_area);
-}
-
-// 从文件加载图
-void load_from_file()
-{
-    GtkWidget* dialog;
-    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
-
-    dialog = gtk_file_chooser_dialog_new("打开图文件",
+    GtkWidget* dialog = gtk_file_chooser_dialog_new(
+        "打开图文件",
         GTK_WINDOW(window),
-        action,
-        "_取消",
-        GTK_RESPONSE_CANCEL,
-        "_打开",
-        GTK_RESPONSE_ACCEPT,
+        GTK_FILE_CHOOSER_ACTION_OPEN,
+        "_取消", GTK_RESPONSE_CANCEL,
+        "_打开", GTK_RESPONSE_ACCEPT,
         NULL);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-        char* filename;
-        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+        char* filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-        ifstream file(filename);
-        if (file.is_open()) {
-            int vertices, edges;
-            file >> vertices >> edges;
-
-            g.init(vertices);
-            for (int i = 0; i < edges; i++) {
-                int u, v;
-                file >> u >> v;
-                g.addEdge(u, v);
-            }
-            file.close();
-
-            generateLayout();
-            string status = "从文件 " + string(filename) + " 加载成功。";
-            gtk_label_set_text(GTK_LABEL(status_label), status.c_str());
+        try {
+            currentGraph = FileManager::loadFromFile(filename);
+            layoutVertices();
+            updateStatus("文件加载成功: " + string(filename));
+            updateStatistics();
             gtk_widget_queue_draw(drawing_area);
-        } else {
-            gtk_label_set_text(GTK_LABEL(status_label), "无法打开文件。");
+        } catch (const exception& e) {
+            updateStatus("加载失败: " + string(e.what()));
         }
 
         g_free(filename);
@@ -573,52 +639,28 @@ void load_from_file()
     gtk_widget_destroy(dialog);
 }
 
-// 保存图到文件
-void save_to_file()
+void save_to_file(GtkWidget* widget, gpointer data)
 {
-    GtkWidget* dialog;
-    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+    if (currentGraph.getVertexCount() == 0) {
+        updateStatus("图为空，无法保存");
+        return;
+    }
 
-    dialog = gtk_file_chooser_dialog_new("保存图",
+    GtkWidget* dialog = gtk_file_chooser_dialog_new(
+        "保存图文件",
         GTK_WINDOW(window),
-        action,
-        "_取消",
-        GTK_RESPONSE_CANCEL,
-        "_保存",
-        GTK_RESPONSE_ACCEPT,
+        GTK_FILE_CHOOSER_ACTION_SAVE,
+        "_取消", GTK_RESPONSE_CANCEL,
+        "_保存", GTK_RESPONSE_ACCEPT,
         NULL);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-        char* filename;
-        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+        char* filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-        ofstream file(filename);
-        if (file.is_open()) {
-            int V = g.getVertexCount();
-            int edgeCount = 0;
-            const auto& adj = g.getAdjacencyList();
-
-            for (int i = 0; i < V; i++) {
-                for (int neighbor : adj[i]) {
-                    if (i < neighbor)
-                        edgeCount++;
-                }
-            }
-
-            file << V << " " << edgeCount << endl;
-
-            for (int i = 0; i < V; i++) {
-                for (int neighbor : adj[i]) {
-                    if (i < neighbor) {
-                        file << i << " " << neighbor << endl;
-                    }
-                }
-            }
-
-            file.close();
-            gtk_label_set_text(GTK_LABEL(status_label), "图已保存到文件。");
+        if (FileManager::saveToFile(currentGraph, filename)) {
+            updateStatus("文件保存成功: " + string(filename));
         } else {
-            gtk_label_set_text(GTK_LABEL(status_label), "无法保存文件。");
+            updateStatus("保存失败");
         }
 
         g_free(filename);
@@ -627,12 +669,32 @@ void save_to_file()
     gtk_widget_destroy(dialog);
 }
 
-// 创建菜单栏
-GtkWidget* create_menu_bar()
+void toggle_show_articulations(GtkWidget* widget, gpointer data)
 {
+    showArticulations = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+    gtk_widget_queue_draw(drawing_area);
+}
+
+void toggle_show_labels(GtkWidget* widget, gpointer data)
+{
+    showLabels = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+    gtk_widget_queue_draw(drawing_area);
+}
+
+// 创建界面
+void create_gui()
+{
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "关节点查找系统");
+    gtk_window_set_default_size(GTK_WINDOW(window), 1000, 700);
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // 主垂直布局
+    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_add(GTK_CONTAINER(window), vbox);
+
+    // 菜单栏
     GtkWidget* menu_bar = gtk_menu_bar_new();
-
-    // 文件菜单
     GtkWidget* file_menu = gtk_menu_new();
     GtkWidget* file_item = gtk_menu_item_new_with_label("文件");
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_item), file_menu);
@@ -645,145 +707,113 @@ GtkWidget* create_menu_bar()
     g_signal_connect(save_item, "activate", G_CALLBACK(save_to_file), NULL);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_item);
 
-    GtkWidget* sep1 = gtk_separator_menu_item_new();
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), sep1);
+    GtkWidget* sep = gtk_separator_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), sep);
 
     GtkWidget* exit_item = gtk_menu_item_new_with_label("退出");
     g_signal_connect(exit_item, "activate", G_CALLBACK(gtk_main_quit), NULL);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), exit_item);
 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), file_item);
+    gtk_box_pack_start(GTK_BOX(vbox), menu_bar, FALSE, FALSE, 0);
 
-    // 图菜单
-    GtkWidget* graph_menu = gtk_menu_new();
-    GtkWidget* graph_item = gtk_menu_item_new_with_label("图");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(graph_item), graph_menu);
+    // 水平布局：绘图区 + 控制面板
+    GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
 
-    GtkWidget* example1_item = gtk_menu_item_new_with_label("示例图1");
-    g_signal_connect(example1_item, "activate", G_CALLBACK(create_example_graph1), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(graph_menu), example1_item);
+    // 绘图区
+    GtkWidget* frame = gtk_frame_new(NULL);
+    drawing_area = gtk_drawing_area_new();
+    gtk_widget_set_size_request(drawing_area, 700, 500);
+    gtk_container_add(GTK_CONTAINER(frame), drawing_area);
+    gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0);
 
-    GtkWidget* example2_item = gtk_menu_item_new_with_label("示例图2（双连通）");
-    g_signal_connect(example2_item, "activate", G_CALLBACK(create_example_graph2), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(graph_menu), example2_item);
+    g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(draw_callback), NULL);
+    g_signal_connect(G_OBJECT(drawing_area), "button-press-event", G_CALLBACK(button_press_callback), NULL);
 
-    GtkWidget* tree_item = gtk_menu_item_new_with_label("树状图");
-    g_signal_connect(tree_item, "activate", G_CALLBACK(create_tree_graph), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(graph_menu), tree_item);
+    // 右侧控制面板
+    GtkWidget* right_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_box_pack_start(GTK_BOX(hbox), right_panel, FALSE, FALSE, 0);
 
-    GtkWidget* random_item = gtk_menu_item_new_with_label("随机图");
-    g_signal_connect(random_item, "activate", G_CALLBACK(create_random_graph), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(graph_menu), random_item);
+    // 统计信息框
+    GtkWidget* stats_frame = gtk_frame_new("统计信息");
+    GtkWidget* stats_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_set_border_width(GTK_CONTAINER(stats_box), 10);
 
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), graph_item);
+    vertex_count_label = gtk_label_new("顶点数: 0");
+    edge_count_label = gtk_label_new("边数: 0");
+    articulation_count_label = gtk_label_new("关节点数: 0");
 
-    // 操作菜单
-    GtkWidget* action_menu = gtk_menu_new();
-    GtkWidget* action_item = gtk_menu_item_new_with_label("操作");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(action_item), action_menu);
+    gtk_box_pack_start(GTK_BOX(stats_box), vertex_count_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(stats_box), edge_count_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(stats_box), articulation_count_label, FALSE, FALSE, 0);
 
-    GtkWidget* find_item = gtk_menu_item_new_with_label("查找关节点");
-    g_signal_connect(find_item, "activate", G_CALLBACK(find_articulations), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(action_menu), find_item);
+    gtk_container_add(GTK_CONTAINER(stats_frame), stats_box);
+    gtk_box_pack_start(GTK_BOX(right_panel), stats_frame, FALSE, FALSE, 0);
 
-    GtkWidget* remove_item = gtk_menu_item_new_with_label("移除选中的关节点");
-    g_signal_connect(remove_item, "activate", G_CALLBACK(remove_articulation), NULL);
-    gtk_menu_shell_append(GTK_MENU_SHELL(action_menu), remove_item);
+    // 控制按钮框
+    GtkWidget* control_frame = gtk_frame_new("控制");
+    GtkWidget* control_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_set_border_width(GTK_CONTAINER(control_box), 10);
 
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), action_item);
+    GtkWidget* example1_btn = gtk_button_new_with_label("示例图1");
+    GtkWidget* example2_btn = gtk_button_new_with_label("示例图2");
+    GtkWidget* random_btn = gtk_button_new_with_label("随机图");
+    GtkWidget* find_btn = gtk_button_new_with_label("查找关节点");
+    GtkWidget* remove_btn = gtk_button_new_with_label("移除关节点");
 
-    return menu_bar;
-}
+    g_signal_connect(example1_btn, "clicked", G_CALLBACK(load_example1), NULL);
+    g_signal_connect(example2_btn, "clicked", G_CALLBACK(load_example2), NULL);
+    g_signal_connect(random_btn, "clicked", G_CALLBACK(generate_random), NULL);
+    g_signal_connect(find_btn, "clicked", G_CALLBACK(find_articulations), NULL);
+    g_signal_connect(remove_btn, "clicked", G_CALLBACK(remove_articulation), NULL);
 
-// 创建工具栏
-GtkWidget* create_toolbar()
-{
-    GtkWidget* toolbar = gtk_toolbar_new();
-    gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
+    gtk_box_pack_start(GTK_BOX(control_box), example1_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), example2_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), random_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), find_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), remove_btn, FALSE, FALSE, 0);
 
-    // 查找关节点按钮
-    GtkToolItem* find_item = gtk_tool_button_new_from_stock(GTK_STOCK_FIND);
-    g_signal_connect(G_OBJECT(find_item), "clicked", G_CALLBACK(find_articulations), NULL);
-    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), find_item, -1);
+    gtk_container_add(GTK_CONTAINER(control_frame), control_box);
+    gtk_box_pack_start(GTK_BOX(right_panel), control_frame, FALSE, FALSE, 0);
 
-    // 移除关节点按钮
-    GtkToolItem* remove_item = gtk_tool_button_new_from_stock(GTK_STOCK_REMOVE);
-    g_signal_connect(G_OBJECT(remove_item), "clicked", G_CALLBACK(remove_articulation), NULL);
-    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), remove_item, -1);
+    // 显示选项框
+    GtkWidget* options_frame = gtk_frame_new("显示选项");
+    GtkWidget* options_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_set_border_width(GTK_CONTAINER(options_box), 10);
 
-    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), gtk_separator_tool_item_new(), -1);
+    GtkWidget* show_ap_check = gtk_check_button_new_with_label("显示关节点");
+    GtkWidget* show_labels_check = gtk_check_button_new_with_label("显示标签");
 
-    // 示例图按钮
-    GtkToolItem* example1_item = gtk_tool_button_new_from_stock(GTK_STOCK_NEW);
-    gtk_tool_button_set_label(GTK_TOOL_BUTTON(example1_item), "示例1");
-    g_signal_connect(G_OBJECT(example1_item), "clicked", G_CALLBACK(create_example_graph1), NULL);
-    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), example1_item, -1);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_ap_check), TRUE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_labels_check), TRUE);
 
-    GtkToolItem* random_item = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
-    gtk_tool_button_set_label(GTK_TOOL_BUTTON(random_item), "随机");
-    g_signal_connect(G_OBJECT(random_item), "clicked", G_CALLBACK(create_random_graph), NULL);
-    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), random_item, -1);
+    g_signal_connect(show_ap_check, "toggled", G_CALLBACK(toggle_show_articulations), NULL);
+    g_signal_connect(show_labels_check, "toggled", G_CALLBACK(toggle_show_labels), NULL);
 
-    return toolbar;
-}
+    gtk_box_pack_start(GTK_BOX(options_box), show_ap_check, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(options_box), show_labels_check, FALSE, FALSE, 0);
 
-// 创建控制面板
-GtkWidget* create_control_panel()
-{
-    GtkWidget* frame = gtk_frame_new("控制");
-    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_set_border_width(GTK_CONTAINER(vbox), 10);
+    gtk_container_add(GTK_CONTAINER(options_frame), options_box);
+    gtk_box_pack_start(GTK_BOX(right_panel), options_frame, FALSE, FALSE, 0);
 
-    // 显示选项
-    GtkWidget* show_articulations = gtk_check_button_new_with_label("显示关节点");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_articulations), TRUE);
-    g_signal_connect(show_articulations, "toggled", G_CALLBACK(toggle_articulations), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), show_articulations, FALSE, FALSE, 0);
+    // 信息框
+    GtkWidget* info_frame = gtk_frame_new("顶点信息");
+    GtkWidget* info_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_set_border_width(GTK_CONTAINER(info_box), 10);
 
-    GtkWidget* show_labels = gtk_check_button_new_with_label("显示标签");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_labels), TRUE);
-    g_signal_connect(show_labels, "toggled", G_CALLBACK(toggle_labels), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), show_labels, FALSE, FALSE, 0);
-
-    // 图操作按钮
-    GtkWidget* find_button = gtk_button_new_with_label("查找关节点");
-    g_signal_connect(find_button, "clicked", G_CALLBACK(find_articulations), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), find_button, FALSE, FALSE, 0);
-
-    GtkWidget* remove_button = gtk_button_new_with_label("移除关节点");
-    g_signal_connect(remove_button, "clicked", G_CALLBACK(remove_articulation), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), remove_button, FALSE, FALSE, 0);
-
-    gtk_container_add(GTK_CONTAINER(frame), vbox);
-    return frame;
-}
-
-// 创建信息面板
-GtkWidget* create_info_panel()
-{
-    GtkWidget* frame = gtk_frame_new("图信息");
-    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_set_border_width(GTK_CONTAINER(vbox), 10);
-
-    GtkWidget* label = gtk_label_new("点击顶点查看详细信息");
-    gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
-    gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
-
-    info_label = gtk_label_new("选择顶点...");
+    info_label = gtk_label_new("点击顶点查看详细信息");
     gtk_label_set_line_wrap(GTK_LABEL(info_label), TRUE);
-    gtk_box_pack_start(GTK_BOX(vbox), info_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(info_box), info_label, FALSE, FALSE, 0);
 
-    gtk_container_add(GTK_CONTAINER(frame), vbox);
-    return frame;
-}
+    gtk_container_add(GTK_CONTAINER(info_frame), info_box);
+    gtk_box_pack_start(GTK_BOX(right_panel), info_frame, FALSE, FALSE, 0);
 
-// 创建状态栏
-GtkWidget* create_status_bar()
-{
-    GtkWidget* status_bar = gtk_statusbar_new();
-    status_label = gtk_label_new("就绪。请加载或创建一个图。");
-    gtk_container_add(GTK_CONTAINER(status_bar), status_label);
-    return status_bar;
+    // 状态栏
+    GtkWidget* status_frame = gtk_frame_new(NULL);
+    status_label = gtk_label_new("就绪");
+    gtk_container_add(GTK_CONTAINER(status_frame), status_label);
+    gtk_box_pack_start(GTK_BOX(vbox), status_frame, FALSE, FALSE, 0);
 }
 
 // 主函数
@@ -791,64 +821,12 @@ int main(int argc, char* argv[])
 {
     gtk_init(&argc, &argv);
 
-    // 创建主窗口
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "关节点查找系统");
-    gtk_window_set_default_size(GTK_WINDOW(window), 1000, 700);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    // 创建主垂直容器
-    GtkWidget* main_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), main_vbox);
-
-    // 添加菜单栏
-    GtkWidget* menu_bar = create_menu_bar();
-    gtk_box_pack_start(GTK_BOX(main_vbox), menu_bar, FALSE, FALSE, 0);
-
-    // 添加工具栏
-    GtkWidget* toolbar = create_toolbar();
-    gtk_box_pack_start(GTK_BOX(main_vbox), toolbar, FALSE, FALSE, 0);
-
-    // 创建水平容器用于绘图区和控制面板
-    GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_pack_start(GTK_BOX(main_vbox), hbox, TRUE, TRUE, 0);
-
-    // 创建绘图区
-    drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 700, 500);
-    g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(draw_callback), NULL);
-    g_signal_connect(G_OBJECT(drawing_area), "button-press-event", G_CALLBACK(button_press_callback), NULL);
-
-    // 添加滚动窗口包装绘图区
-    GtkWidget* scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-        GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_container_add(GTK_CONTAINER(scrolled_window), drawing_area);
-    gtk_box_pack_start(GTK_BOX(hbox), scrolled_window, TRUE, TRUE, 0);
-
-    // 创建右侧控制面板
-    GtkWidget* right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_box_pack_start(GTK_BOX(hbox), right_vbox, FALSE, FALSE, 0);
-
-    // 添加控制面板
-    GtkWidget* control_panel = create_control_panel();
-    gtk_box_pack_start(GTK_BOX(right_vbox), control_panel, FALSE, FALSE, 0);
-
-    // 添加信息面板
-    GtkWidget* info_panel = create_info_panel();
-    gtk_box_pack_start(GTK_BOX(right_vbox), info_panel, FALSE, FALSE, 0);
-
-    // 添加状态栏
-    GtkWidget* status_bar = create_status_bar();
-    gtk_box_pack_start(GTK_BOX(main_vbox), status_bar, FALSE, FALSE, 0);
-
-    // 显示所有部件
-    gtk_widget_show_all(window);
+    create_gui();
 
     // 加载初始示例图
-    create_example_graph1();
+    load_example1(NULL, NULL);
 
-    // 启动GTK主循环
+    gtk_widget_show_all(window);
     gtk_main();
 
     return 0;
