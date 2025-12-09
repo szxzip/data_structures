@@ -30,7 +30,7 @@
 
 2. 打开 MSYS2 **UCRT64**。（有好几个环境，ucrt64 更常用些）
 
-（下面都是在这个环境里执行）
+> 以下都是在此环境中执行
 
 3. 安装 gtk3。
 
@@ -50,7 +50,7 @@
    cd X:/path/to/codes
    ```
    
-   `cd` = change directory。`X:` 意思是盘符，比如 C 盘。`/` 用来代替 `\`（linux 和 win 的路径分隔符不一样）。
+   `cd` = change directory。`X:` 是盘符，比如 C 盘。`/` 用来代替 `\`（linux 和 win 的路径分隔符不一样）。
    
    比如
    
@@ -64,4 +64,4 @@
    g++ -o run.exe sample.cpp `pkg-config --cflags --libs gtk+-3.0` -mwindows
    ```
    
-   `g++` 是 C++ 编译工具。`-o run.exe` 代表输出的可执行文件。`sample.cpp` 编译 sample.cpp。`pkg-config --cflags --libs gtk+-3.0` 添加 gtk3。
+   `g++` 是 C++ 编译工具。`-o run.exe` 输出可执行文件。`sample.cpp` 编译 sample.cpp。`pkg-config --cflags --libs gtk+-3.0` 添加 gtk3。
