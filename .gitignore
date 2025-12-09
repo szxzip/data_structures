@@ -5,5 +5,310 @@
 *.xls
 *.xlsx
 *.pdf
-*.out
+
+# ================================
+# C/C++ 编译输出和中间文件
+# ================================
+
+# 可执行文件
 *.exe
+*.out
+*.app
+
+# 目标文件
+*.o
+*.obj
+*.ko
+
+# 库文件
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# 预编译头文件
+*.pch
+*.gch
+
+# 依赖文件
+*.d
+
+# 汇编输出
+*.s
+*.asm
+
+# 调试文件
+*.ilk
+*.map
+*.exp
+*.su
+*.idb
+*.pdb
+
+# 编译数据库
+compile_commands.json
+
+# CMake 构建目录
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# 自动生成的文件
+autom4te.cache/
+*.autosave
+
+# 代码覆盖文件
+*.gcno
+*.gcda
+*.gcov
+
+# 性能分析数据
+*.profraw
+*.profdata
+
+# Clang 特定文件
+*.clangd
+.cache/
+
+# ================================
+# C/C++ IDE 和编辑器文件
+# ================================
+
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.sdf
+*.opensdf
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.tlog
+*.lastbuildstate
+BuildLog.htm
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+[Ww]in32/
+[Aa]rm/
+[Pp]ackages/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# CLion
+.idea/
+*.iws
+*.iml
+*.ipr
+cmake-build-*/
+out/
+
+# Eclipse
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# Code::Blocks
+*.workspace
+*.workspace.layout
+*.cbp
+*.cbp.temp
+*.depend
+*.layout
+bin/
+obj/
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# Emacs
+*~
+\#*
+.\#*
+*.elc
+TAGS
+
+# ================================
+# C/C++ 包管理和依赖
+# ================================
+
+# Conan
+.conan/
+.conan2/
+
+# vcpkg
+vcpkg_installed/
+vcpkg_scripts/
+
+# ================================
+# C/C++ 测试相关
+# ================================
+
+# Google Test
+gtest/
+gmock/
+
+# Catch2
+*.tap
+*.trs
+
+# ================================
+# C/C++ 静态分析和文档
+# ================================
+
+# Doxygen
+doxygen/
+docs/html/
+docs/latex/
+
+# Cppcheck
+cppcheck-htmlreport/
+
+# ================================
+# 通用编译中间文件（按编译器）
+# ================================
+
+# GCC/Clang
+*.i
+*.ii
+*.s
+*.ii
+
+# MSVC
+*.idb
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
+*.res
+*.sbr
+
+# Intel
+*.pspi
+*.pdb
+
+# ================================
+# C/C++ 项目结构示例
+# ================================
+
+# 通常忽略构建目录，但保留配置
+# build/           # CMake 构建目录
+# bin/            # 可执行文件输出
+# lib/            # 库文件输出
+# obj/            # 目标文件
+# .deps/          # 依赖文件
+
+# ================================
+# 推荐的 C/C++ 项目配置
+# ================================
+
+# 构建目录模式
+[Bb]uild*/
+[Oo]utput*/
+[Dd]ist*/
+
+# 临时文件
+*.tmp
+*.temp
+*.TMP
+
+# 补丁文件
+*.orig
+*.rej
+
+# 备份文件
+*.bak
+*.backup
+
+# ================================
+# 现代 C/C++ 开发工具链
+# ================================
+
+# Bazel
+bazel-*
+.bazelrc.user
+
+# Meson
+builddir/
+meson-private/
+meson-info/
+
+# Premake
+*.ps1
+Makefile
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+# ================================
+# 跨平台开发注意事项
+# ================================
+
+# Windows 特定
+*.manifest
+*.msi
+*.aps
+
+# Linux/Unix 特定
+*.so
+*.so.*
+core
+core.*
+*.core
+
+# macOS 特定
+*.dylib
+*.bundle
+
+# ================================
+# 调试和性能分析
+# ================================
+
+# GDB
+.gdb_history
+
+# Valgrind
+valgrind-*
+*.vglog
+
+# Perf
+perf.data*
