@@ -28,7 +28,7 @@
 
 ### 一
 
-> 具体函数分工，详见 [header.h](https://github.com/szxzip/data_structures/blob/main/1/header.h)
+> 具体函数分工，详见 [header.h](https://github.com/szxzip/data_structures/blob/main/1/header.h)。另，header.h不一定保真，遇到问题了直接改就行。🤓
 
 **A**
 1. （5）实现将关节点改造为非关节的功能。  
