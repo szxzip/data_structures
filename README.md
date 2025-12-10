@@ -28,7 +28,7 @@
 
 **一**
 
-> 具体函数分工，详见 [`header.h`](https://github.com/szxzip/data_structures/blob/main/1/header.h)
+> 具体函数分工，详见 [header.h](https://github.com/szxzip/data_structures/blob/main/1/header.h)
 
 A
 1. （1）采用邻接表或邻接矩阵存储结构。
