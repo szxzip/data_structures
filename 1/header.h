@@ -24,18 +24,20 @@ private:
     std::vector<bool> articulationPoints; // 关节点
     int time; // DFS时间计数器
 
-    void DFS(int u); // 深度优先遍历（私有辅助函数）
+    // B
+    void DFS(int u); // 深度优先遍历
 
 public:
     Graph(int vertices); // 创建指定顶点数的图
 
-    // 公用?
+    // A
     void addEdge(int u, int v); // 添加边
     void removeEdge(int u, int v); // 删除边
     bool edgeExists(int u, int v) const; // 检查边是否存在
     int getVertexCount() const { return V; } // 获取顶点数
     int getEdgeCount() const; // 获取边数
     void printGraph() const; // 打印图结构
+    bool convertToNonArticulation(int vertex); // 改造关节点为非关节点
 
     // B
     void findArticulationPoints(); // 查找所有关节点
@@ -43,10 +45,8 @@ public:
     int countArticulationPoints() const; // 统计关节点数量
     bool isArticulationPoint(int vertex) const; // 判断是否为关节点
 
-    // A
-    bool convertToNonArticulation(int vertex); // 改造关节点为非关节点
-
-    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; } // 获取邻接表
+    // 获取邻接表
+    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; }
 
     // 清除图
     void clear()
