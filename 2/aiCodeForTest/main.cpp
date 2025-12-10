@@ -118,7 +118,7 @@ GtkWidget* create_main_window(AppData* app_data)
 
     // 结果区域
     GtkWidget* result_frame = gtk_frame_new("配对结果");
-    gtk_box_pack_start(GTK_BOX(vbox), result_frame, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(vbox), result_frame, TRUE, TRUE, 5);
 
     GtkWidget* result_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(result_vbox), 10);
@@ -131,6 +131,7 @@ GtkWidget* create_main_window(AppData* app_data)
     GtkWidget* scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
         GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(scrolled_window, -1, 200);
     gtk_container_add(GTK_CONTAINER(scrolled_window), app_data->result_text);
     gtk_box_pack_start(GTK_BOX(result_vbox), scrolled_window, TRUE, TRUE, 0);
 
