@@ -1,4 +1,4 @@
-#include "graph_articulation.h"
+#include "header.h"
 
 std::unique_ptr<Graph> GraphIO::createFromFile(const std::string& filename)
 {

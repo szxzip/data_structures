@@ -1,4 +1,4 @@
-#include "graph_articulation.h"
+#include "header.h"
 #include <cairo.h>
 #include <cstring>
 #include <gtk/gtk.h>

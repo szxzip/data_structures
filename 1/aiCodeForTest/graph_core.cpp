@@ -1,4 +1,4 @@
-#include "graph_articulation.h"
+#include "header.h"
 
 Graph::Graph(int vertices)
     : V(vertices)

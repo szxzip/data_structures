@@ -1,6 +1,3 @@
-#ifndef GRAPH_ARTICULATION_H
-#define GRAPH_ARTICULATION_H
-
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -79,5 +76,3 @@ public:
 
 // 函数声明，用于在main.cpp中调用
 void update_graph_display();
-
-#endif // GRAPH_ARTICULATION_H
