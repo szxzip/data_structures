@@ -29,20 +29,24 @@ private:
 public:
     Graph(int vertices); // 创建指定顶点数的图
 
+    // 公用?
     void addEdge(int u, int v); // 添加边
     void removeEdge(int u, int v); // 删除边
     bool edgeExists(int u, int v) const; // 检查边是否存在
+    int getVertexCount() const { return V; } // 获取顶点数
+    int getEdgeCount() const; // 获取边数
+    void printGraph() const; // 打印图结构
 
+    // B
     void findArticulationPoints(); // 查找所有关节点
     std::vector<int> getArticulationPoints() const; // 获取关节点列表
     int countArticulationPoints() const; // 统计关节点数量
     bool isArticulationPoint(int vertex) const; // 判断是否为关节点
+
+    // A
     bool convertToNonArticulation(int vertex); // 改造关节点为非关节点
 
-    int getVertexCount() const { return V; } // 获取顶点数
-    int getEdgeCount() const; // 获取边数
-    void printGraph() const; // 打印图结构
-    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; }
+    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; } // 获取邻接表
 
     // 清除图
     void clear()
@@ -64,9 +68,10 @@ public:
 // 图输入/输出类
 class GraphIO {
 public:
-    static std::unique_ptr<Graph> createFromFile(const std::string& filename);
-    static std::unique_ptr<Graph> createRandom(int vertices, double density = 0.3);
-    static bool saveToFile(const Graph& graph, const std::string& filename);
+    // C
+    static std::unique_ptr<Graph> createFromFile(const std::string& filename); // 从文件读入
+    static std::unique_ptr<Graph> createRandom(int vertices, double density = 0.3); // 随机创建
+    static bool saveToFile(const Graph& graph, const std::string& filename); // 写入文件
 };
 
 // 函数声明，用于在main.cpp中调用
