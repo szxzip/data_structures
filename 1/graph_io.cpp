@@ -1,7 +1,6 @@
 #include "header.h"
 
-// 用 unique_ptr 独占，自动处理内存
-std::unique_ptr<Graph> GraphIO::createFromFile(const std::string& filename)
+Graph* GraphIO::createFromFile(const std::string& filename)
 {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -29,7 +28,7 @@ std::unique_ptr<Graph> GraphIO::createFromFile(const std::string& filename)
     return graph;
 }
 
-std::unique_ptr<Graph> GraphIO::createRandom(int vertices, double density)
+Graph* GraphIO::createRandom(int vertices, double density)
 {
     auto graph = std::make_unique<Graph>(vertices);
 

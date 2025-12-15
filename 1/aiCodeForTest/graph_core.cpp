@@ -1,5 +1,6 @@
 #include "header.h"
 
+// 构造函数
 Graph::Graph(int vertices)
     : V(vertices)
     , time(0)
@@ -12,10 +13,10 @@ Graph::Graph(int vertices)
     articulationPoints.resize(V, false);
 }
 
+// 添加边
 void Graph::addEdge(int u, int v)
 {
     if (u >= 0 && u < V && v >= 0 && v < V && u != v) {
-        // 检查边是否已存在
         if (!edgeExists(u, v)) {
             adj[u].push_back(v);
             adj[v].push_back(u);
@@ -23,34 +24,49 @@ void Graph::addEdge(int u, int v)
     }
 }
 
+// 删除边
 void Graph::removeEdge(int u, int v)
 {
     if (u >= 0 && u < V && v >= 0 && v < V) {
-        adj[u].erase(std::remove(adj[u].begin(), adj[u].end(), v), adj[u].end());
-        adj[v].erase(std::remove(adj[v].begin(), adj[v].end(), u), adj[v].end());
+        // 从u的邻接表中删除v
+        int pos = Utils::find(adj[u], v);
+        if (pos != -1) {
+            adj[u][pos] = adj[u].back();
+            adj[u].pop_back();
+        }
+
+        // 从v的邻接表中删除u
+        pos = Utils::find(adj[v], u);
+        if (pos != -1) {
+            adj[v][pos] = adj[v].back();
+            adj[v].pop_back();
+        }
     }
 }
 
+// 检查边是否存在
 bool Graph::edgeExists(int u, int v) const
 {
     if (u < 0 || u >= V || v < 0 || v >= V)
         return false;
-    return std::find(adj[u].begin(), adj[u].end(), v) != adj[u].end();
+    return Utils::find(adj[u], v) != -1;
 }
 
+// 深度优先遍历（用于查找关节点）
 void Graph::DFS(int u)
 {
     int children = 0;
     visited[u] = true;
     disc[u] = low[u] = ++time;
 
-    for (int v : adj[u]) {
+    for (size_t i = 0; i < adj[u].size(); i++) {
+        int v = adj[u][i];
         if (!visited[v]) {
             children++;
             parent[v] = u;
             DFS(v);
 
-            low[u] = std::min(low[u], low[v]);
+            low[u] = Utils::min(low[u], low[v]);
 
             // 规则1: u是根节点且有多个子节点
             if (parent[u] == -1 && children > 1)
@@ -60,19 +76,22 @@ void Graph::DFS(int u)
             if (parent[u] != -1 && low[v] >= disc[u])
                 articulationPoints[u] = true;
         } else if (v != parent[u]) {
-            low[u] = std::min(low[u], disc[v]);
+            low[u] = Utils::min(low[u], disc[v]);
         }
     }
 }
 
+// 查找所有关节点
 void Graph::findArticulationPoints()
 {
     // 重置数据
-    std::fill(visited.begin(), visited.end(), false);
-    std::fill(disc.begin(), disc.end(), -1);
-    std::fill(low.begin(), low.end(), -1);
-    std::fill(parent.begin(), parent.end(), -1);
-    std::fill(articulationPoints.begin(), articulationPoints.end(), false);
+    for (int i = 0; i < V; i++) {
+        visited[i] = false;
+        disc[i] = -1;
+        low[i] = -1;
+        parent[i] = -1;
+        articulationPoints[i] = false;
+    }
     time = 0;
 
     // 从每个未访问的顶点开始DFS
@@ -83,6 +102,7 @@ void Graph::findArticulationPoints()
     }
 }
 
+// 获取关节点列表
 std::vector<int> Graph::getArticulationPoints() const
 {
     std::vector<int> result;
@@ -94,16 +114,18 @@ std::vector<int> Graph::getArticulationPoints() const
     return result;
 }
 
+// 统计关节点数量
 int Graph::countArticulationPoints() const
 {
     int count = 0;
-    for (bool isAP : articulationPoints) {
-        if (isAP)
+    for (int i = 0; i < V; i++) {
+        if (articulationPoints[i])
             count++;
     }
     return count;
 }
 
+// 判断是否为关节点
 bool Graph::isArticulationPoint(int vertex) const
 {
     if (vertex < 0 || vertex >= V)
@@ -111,6 +133,7 @@ bool Graph::isArticulationPoint(int vertex) const
     return articulationPoints[vertex];
 }
 
+// 获取边数
 int Graph::getEdgeCount() const
 {
     int count = 0;
@@ -120,17 +143,19 @@ int Graph::getEdgeCount() const
     return count / 2; // 无向图，每条边被计算两次
 }
 
+// 打印图结构
 void Graph::printGraph() const
 {
     for (int i = 0; i < V; i++) {
         std::cout << "顶点 " << i << ": ";
-        for (int neighbor : adj[i]) {
-            std::cout << neighbor << " ";
+        for (size_t j = 0; j < adj[i].size(); j++) {
+            std::cout << adj[i][j] << " ";
         }
         std::cout << std::endl;
     }
 }
 
+// 改造关节点为非关节点
 bool Graph::convertToNonArticulation(int vertex)
 {
     if (!isArticulationPoint(vertex)) {
@@ -138,9 +163,11 @@ bool Graph::convertToNonArticulation(int vertex)
     }
 
     // 找到所有使得该顶点成为关节点的子节点
-    for (int v : adj[vertex]) {
+    for (size_t i = 0; i < adj[vertex].size(); i++) {
+        int v = adj[vertex][i];
         // 尝试连接v到vertex的另一个邻居
-        for (int neighbor : adj[vertex]) {
+        for (size_t j = 0; j < adj[vertex].size(); j++) {
+            int neighbor = adj[vertex][j];
             if (neighbor != v && !edgeExists(v, neighbor)) {
                 addEdge(v, neighbor);
                 // 重新计算关节点
@@ -153,4 +180,45 @@ bool Graph::convertToNonArticulation(int vertex)
     }
 
     return false;
+}
+
+// 清除图
+void Graph::clear()
+{
+    adj.clear();
+    V = 0;
+    articulationPoints.clear();
+}
+
+// 重置图大小
+void Graph::resize(int vertices)
+{
+    V = vertices;
+    adj.resize(V);
+    articulationPoints.resize(V, false);
+}
+
+// 从控制台输入图
+void Graph::inputFromConsole()
+{
+    std::cout << "请输入顶点数: ";
+    std::cin >> V;
+
+    resize(V);
+
+    std::cout << "请输入边数: ";
+    int E;
+    std::cin >> E;
+
+    std::cout << "请输入" << E << "条边 (格式: u v):" << std::endl;
+    for (int i = 0; i < E; i++) {
+        int u, v;
+        std::cin >> u >> v;
+        if (u >= 0 && u < V && v >= 0 && v < V) {
+            addEdge(u, v);
+        } else {
+            std::cout << "无效的边，请重新输入" << std::endl;
+            i--;
+        }
+    }
 }

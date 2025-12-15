@@ -2,10 +2,6 @@
 #include <cairo.h>
 #include <cstring>
 #include <gtk/gtk.h>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <vector>
 
 // 全局变量
 static GtkWidget* window = nullptr;
@@ -16,12 +12,12 @@ static GtkWidget* articulation_list = nullptr;
 static GtkWidget* vertex_entry = nullptr;
 static GtkWidget* density_scale = nullptr;
 
-static std::unique_ptr<Graph> currentGraph = nullptr;
+static Graph* currentGraph = nullptr;
 static std::vector<int> currentArticulations;
 static std::vector<std::pair<double, double>> vertexPositions;
 static std::vector<std::pair<int, int>> edgeList;
 
-// 更新图显示（在main.cpp中定义）
+// 更新图显示
 void update_graph_display()
 {
     if (!currentGraph)
@@ -36,16 +32,17 @@ void update_graph_display()
         double angle = 2 * 3.141592653589793 * i / V;
         double x = centerX + radius * std::cos(angle);
         double y = centerY + radius * std::sin(angle);
-        vertexPositions.push_back({ x, y });
+        vertexPositions.push_back(std::make_pair(x, y));
     }
 
     // 获取边列表
     edgeList.clear();
-    const auto& adj = currentGraph->getAdjacencyList();
+    const std::vector<std::vector<int>>& adj = currentGraph->getAdjacencyList();
     for (int i = 0; i < V; i++) {
-        for (int neighbor : adj[i]) {
+        for (size_t j = 0; j < adj[i].size(); j++) {
+            int neighbor = adj[i][j];
             if (i < neighbor) { // 避免重复
-                edgeList.push_back({ i, neighbor });
+                edgeList.push_back(std::make_pair(i, neighbor));
             }
         }
     }
@@ -75,9 +72,9 @@ static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
     cairo_set_source_rgb(cr, 0.7, 0.7, 0.7);
     cairo_set_line_width(cr, 2);
 
-    for (const auto& edge : edgeList) {
-        int u = edge.first;
-        int v = edge.second;
+    for (size_t i = 0; i < edgeList.size(); i++) {
+        int u = edgeList[i].first;
+        int v = edgeList[i].second;
 
         double x1 = vertexPositions[u].first;
         double y1 = vertexPositions[u].second;
@@ -96,8 +93,8 @@ static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
 
         // 判断是否为关节点
         bool isAP = false;
-        for (int ap : currentArticulations) {
-            if (ap == i) {
+        for (size_t j = 0; j < currentArticulations.size(); j++) {
+            if (currentArticulations[j] == i) {
                 isAP = true;
                 break;
             }
@@ -172,6 +169,11 @@ static void create_new_graph(GtkWidget* widget, gpointer data)
         int vertices = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(vertex_spin));
         double density = gtk_range_get_value(GTK_RANGE(density_scale));
 
+        // 删除旧图
+        if (currentGraph) {
+            delete currentGraph;
+        }
+
         currentGraph = GraphIO::createRandom(vertices, density);
         currentArticulations.clear();
 
@@ -184,6 +186,51 @@ static void create_new_graph(GtkWidget* widget, gpointer data)
 
         std::stringstream msg;
         msg << "创建了随机图，顶点数: " << vertices << ", 边数: " << currentGraph->getEdgeCount();
+        gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
+    }
+
+    gtk_widget_destroy(dialog);
+}
+
+// 手动输入图
+static void input_graph_manually(GtkWidget* widget, gpointer data)
+{
+    GtkWidget* dialog = gtk_dialog_new_with_buttons("手动输入图",
+        GTK_WINDOW(window),
+        GTK_DIALOG_MODAL,
+        "确定", GTK_RESPONSE_OK,
+        "取消", GTK_RESPONSE_CANCEL,
+        NULL);
+
+    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+
+    GtkWidget* info_label = gtk_label_new("请在控制台输入图的数据");
+    gtk_box_pack_start(GTK_BOX(vbox), info_label, FALSE, FALSE, 0);
+
+    gtk_container_add(GTK_CONTAINER(content), vbox);
+    gtk_widget_show_all(dialog);
+
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
+        // 删除旧图
+        if (currentGraph) {
+            delete currentGraph;
+        }
+
+        currentGraph = new Graph(1); // 临时图
+        currentGraph->inputFromConsole();
+        currentArticulations.clear();
+
+        // 更新显示
+        update_graph_display();
+
+        // 清空关节点列表
+        GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
+        gtk_list_store_clear(store);
+
+        std::stringstream msg;
+        msg << "手动输入图完成，顶点数: " << currentGraph->getVertexCount()
+            << ", 边数: " << currentGraph->getEdgeCount();
         gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
     }
 
@@ -207,6 +254,11 @@ static void load_graph_from_file(GtkWidget* widget, gpointer data)
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         char* filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+        // 删除旧图
+        if (currentGraph) {
+            delete currentGraph;
+        }
 
         currentGraph = GraphIO::createFromFile(filename);
         if (currentGraph) {
@@ -286,10 +338,10 @@ static void find_articulation_points(GtkWidget* widget, gpointer data)
     gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list))));
 
     GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
-    for (int ap : currentArticulations) {
+    for (size_t i = 0; i < currentArticulations.size(); i++) {
         GtkTreeIter iter;
         gtk_list_store_append(store, &iter);
-        std::string vertex_str = std::to_string(ap);
+        std::string vertex_str = std::to_string(currentArticulations[i]);
         gtk_list_store_set(store, &iter, 0, vertex_str.c_str(), -1);
     }
 
@@ -330,7 +382,7 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
     }
 
     const char* vertex_text = gtk_entry_get_text(GTK_ENTRY(vertex_entry));
-    if (strlen(vertex_text) == 0) {
+    if (std::strlen(vertex_text) == 0) {
         gtk_label_set_text(GTK_LABEL(status_label), "请输入顶点编号！");
         return;
     }
@@ -361,10 +413,10 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
         gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list))));
 
         GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
-        for (int ap : currentArticulations) {
+        for (size_t i = 0; i < currentArticulations.size(); i++) {
             GtkTreeIter iter;
             gtk_list_store_append(store, &iter);
-            std::string vertex_str = std::to_string(ap);
+            std::string vertex_str = std::to_string(currentArticulations[i]);
             gtk_list_store_set(store, &iter, 0, vertex_str.c_str(), -1);
         }
 
@@ -420,12 +472,14 @@ static void initialize_gui(int argc, char** argv)
     GtkWidget* file_menu = gtk_menu_new();
 
     GtkWidget* new_item = gtk_menu_item_new_with_label("新建随机图");
+    GtkWidget* manual_item = gtk_menu_item_new_with_label("手动输入图");
     GtkWidget* open_item = gtk_menu_item_new_with_label("打开图文件");
     GtkWidget* save_item = gtk_menu_item_new_with_label("保存图文件");
     GtkWidget* separator = gtk_separator_menu_item_new();
     GtkWidget* exit_item = gtk_menu_item_new_with_label("退出");
 
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), manual_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator);
@@ -548,12 +602,14 @@ static void initialize_gui(int argc, char** argv)
     GtkWidget* button_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
     GtkWidget* new_button = gtk_button_new_with_label("新建随机图");
+    GtkWidget* manual_button = gtk_button_new_with_label("手动输入图");
     GtkWidget* open_button = gtk_button_new_with_label("打开图文件");
     GtkWidget* save_button = gtk_button_new_with_label("保存图文件");
     GtkWidget* find_button = gtk_button_new_with_label("查找关节点");
     GtkWidget* count_button = gtk_button_new_with_label("统计关节点");
 
     gtk_box_pack_start(GTK_BOX(button_vbox), new_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_vbox), manual_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), open_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), save_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), find_button, FALSE, FALSE, 0);
@@ -579,6 +635,7 @@ static void initialize_gui(int argc, char** argv)
 
     // 连接信号
     g_signal_connect(new_item, "activate", G_CALLBACK(create_new_graph), NULL);
+    g_signal_connect(manual_item, "activate", G_CALLBACK(input_graph_manually), NULL);
     g_signal_connect(open_item, "activate", G_CALLBACK(load_graph_from_file), NULL);
     g_signal_connect(save_item, "activate", G_CALLBACK(save_graph_to_file), NULL);
     g_signal_connect(exit_item, "activate", G_CALLBACK(gtk_main_quit), NULL);
@@ -593,6 +650,7 @@ static void initialize_gui(int argc, char** argv)
     g_signal_connect(count_tool, "clicked", G_CALLBACK(count_articulation_points), NULL);
 
     g_signal_connect(new_button, "clicked", G_CALLBACK(create_new_graph), NULL);
+    g_signal_connect(manual_button, "clicked", G_CALLBACK(input_graph_manually), NULL);
     g_signal_connect(open_button, "clicked", G_CALLBACK(load_graph_from_file), NULL);
     g_signal_connect(save_button, "clicked", G_CALLBACK(save_graph_to_file), NULL);
     g_signal_connect(find_button, "clicked", G_CALLBACK(find_articulation_points), NULL);
@@ -610,5 +668,11 @@ int main(int argc, char** argv)
 {
     initialize_gui(argc, argv);
     gtk_main();
+
+    // 清理内存
+    if (currentGraph) {
+        delete currentGraph;
+    }
+
     return 0;
 }

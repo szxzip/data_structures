@@ -1,13 +1,9 @@
-#include <algorithm> // 算法，处理数据
 #include <cmath>
 #include <ctime> // 计时
 #include <fstream>
-#include <functional> // ui
 #include <iostream>
 #include <memory> // 智能指针，std::unique_ptr 用到
-#include <random> // 随机数
 #include <sstream> // 字符串流
-#include <stack> // 栈容器，dfs 有用
 #include <string>
 #include <vector>
 
@@ -68,8 +64,8 @@ public:
 class GraphIO {
 public:
     // C
-    static std::unique_ptr<Graph> createFromFile(const std::string& filename); // 从文件读入
-    static std::unique_ptr<Graph> createRandom(int vertices, double density = 0.3); // 随机创建
+    static Graph* createFromFile(const std::string& filename); // 从文件读入
+    static Graph* createRandom(int vertices, double density = 0.3); // 随机创建
     static bool saveToFile(const Graph& graph, const std::string& filename); // 写入文件
 };
 
