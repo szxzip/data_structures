@@ -2,8 +2,10 @@
 #define HEADER_H
 
 #include <cmath>
+#include <cstring>
 #include <ctime>
 #include <fstream>
+#include <gtk/gtk.h>
 #include <iostream>
 #include <sstream>
 #include <string>

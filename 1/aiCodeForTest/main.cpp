@@ -1,7 +1,4 @@
 #include "header.h"
-#include <cairo.h>
-#include <cstring>
-#include <gtk/gtk.h>
 
 // 全局变量
 static GtkWidget* window = nullptr;
