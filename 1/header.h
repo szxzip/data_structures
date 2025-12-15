@@ -1,8 +1,9 @@
 #include <cmath>
+#include <cstring>
 #include <ctime> // 计时
 #include <fstream>
+#include <gtk/gtk.h>
 #include <iostream>
-#include <memory> // 智能指针，std::unique_ptr 用到
 #include <sstream> // 字符串流
 #include <string>
 #include <vector>
@@ -40,24 +41,10 @@ public:
     int countArticulationPoints() const; // 统计关节点数量
     bool isArticulationPoint(int vertex) const; // 判断是否为关节点
 
-    // 获取邻接表
-    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; }
-
-    // 清除图
-    void clear()
-    {
-        adj.clear();
-        V = 0;
-        articulationPoints.clear();
-    }
-
-    // 重置图大小
-    void resize(int vertices)
-    {
-        V = vertices;
-        adj.resize(V);
-        articulationPoints.resize(V, false);
-    }
+    // 辅助函数
+    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; } // 获取邻接表
+    void clear(); // 清除图
+    void resize(int vertices); // 重置图大小
 };
 
 // 图输入/输出类
@@ -68,6 +55,3 @@ public:
     static Graph* createRandom(int vertices, double density = 0.3); // 随机创建
     static bool saveToFile(const Graph& graph, const std::string& filename); // 写入文件
 };
-
-// 函数声明，用于在main.cpp中调用
-void update_graph_display();
