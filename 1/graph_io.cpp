@@ -74,7 +74,7 @@ bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
 
     // 保存边
     for (int i = 0; i < V; i++) {
-        const std::vector<int>& neighbors = graph.getAdjacencyList()[i];
+        const std::vector<int>& neighbors = graph.getAdjacencyList()[i]; // 将该点邻接表存入向量
         for (size_t j = 0; j < neighbors.size(); j++) {
             int neighbor = neighbors[j];
             if (i < neighbor) { // 避免重复保存
