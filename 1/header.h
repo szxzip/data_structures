@@ -14,7 +14,7 @@ private:
     int V; // 顶点数
     std::vector<std::vector<int>> adj; // 邻接表
     std::vector<bool> visited; // 是否发现
-    std::vector<int> disc; // 发现时间
+    std::vector<int> disc; // 发现时间（时间戳）
     std::vector<int> low; // 最小非父可达节点
     std::vector<int> parent; // 父节点
     std::vector<bool> articulationPoints; // 关节点
