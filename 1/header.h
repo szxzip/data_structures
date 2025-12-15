@@ -55,3 +55,26 @@ public:
     static Graph* createRandom(int vertices, double density = 0.3); // 随机创建
     static bool saveToFile(const Graph& graph, const std::string& filename); // 写入文件
 };
+
+// 模板函数，可参考
+
+// 生成随机数
+int randomInt(int min, int max)
+{
+    static bool seeded = false;
+    if (!seeded) {
+        std::srand(static_cast<unsigned>(std::time(nullptr)));
+        seeded = true;
+    }
+    return min + (std::rand() % (max - min + 1));
+}
+
+double randomDouble()
+{
+    static bool seeded = false;
+    if (!seeded) {
+        std::srand(static_cast<unsigned>(std::time(nullptr)));
+        seeded = true;
+    }
+    return static_cast<double>(std::rand()) / RAND_MAX;
+}

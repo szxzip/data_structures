@@ -1,5 +1,6 @@
 #include "header.h"
 
+// 从文件读入图
 Graph* GraphIO::createFromFile(const std::string& filename)
 {
     std::ifstream file(filename);
@@ -11,7 +12,7 @@ Graph* GraphIO::createFromFile(const std::string& filename)
     int V, E; // 顶点数、边数
     file >> V >> E;
 
-    auto graph = std::make_unique<Graph>(V); // 创建 V 个顶点的图。make_unique：创建 unique_ptr，故需要 auto 自动判定数据类型。
+    Graph* graph = new Graph(V);
 
     // 读取、添加边
     for (int i = 0; i < E; i++) { // 边数超出，则抛弃多余行
@@ -19,6 +20,7 @@ Graph* GraphIO::createFromFile(const std::string& filename)
         if (!(file >> u >> v)) { // 检查是否少行
             std::cerr << "错误：第 " << i + 1 << " 条边读取失败，检查文件是否规范！" << std::endl;
             file.close();
+            delete graph;
             return nullptr;
         }
         graph->addEdge(u, v);
@@ -28,17 +30,14 @@ Graph* GraphIO::createFromFile(const std::string& filename)
     return graph;
 }
 
+// 随机创建图
 Graph* GraphIO::createRandom(int vertices, double density)
 {
-    auto graph = std::make_unique<Graph>(vertices);
-
-    std::mt19937 rng(time(nullptr));
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    Graph* graph = new Graph(vertices);
 
     // 确保图连通（生成一棵生成树）
     for (int i = 1; i < vertices; i++) {
-        std::uniform_int_distribution<int> parentDist(0, i - 1);
-        int parent = parentDist(rng);
+        int parent = Utils::randomInt(0, i - 1);
         graph->addEdge(i, parent);
     }
 
@@ -48,8 +47,8 @@ Graph* GraphIO::createRandom(int vertices, double density)
     int currentEdges = vertices - 1;
 
     while (currentEdges < targetEdges) {
-        int u = rng() % vertices;
-        int v = rng() % vertices;
+        int u = Utils::randomInt(0, vertices - 1);
+        int v = Utils::randomInt(0, vertices - 1);
 
         if (u != v && !graph->edgeExists(u, v)) {
             graph->addEdge(u, v);
@@ -60,6 +59,7 @@ Graph* GraphIO::createRandom(int vertices, double density)
     return graph;
 }
 
+// 写入图到文件
 bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
 {
     std::ofstream file(filename);
@@ -74,7 +74,9 @@ bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
 
     // 保存边
     for (int i = 0; i < V; i++) {
-        for (int neighbor : graph.getAdjacencyList()[i]) {
+        const std::vector<int>& neighbors = graph.getAdjacencyList()[i];
+        for (size_t j = 0; j < neighbors.size(); j++) {
+            int neighbor = neighbors[j];
             if (i < neighbor) { // 避免重复保存
                 file << i << " " << neighbor << std::endl;
             }
