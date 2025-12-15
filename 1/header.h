@@ -1,14 +1,13 @@
-#include <algorithm>
+#include <algorithm> // 算法，处理数据
 #include <cmath>
-#include <ctime>
+#include <ctime> // 计时
 #include <fstream>
-#include <functional>
+#include <functional> // ui
 #include <iostream>
-#include <memory>
-#include <queue>
-#include <random>
-#include <sstream>
-#include <stack>
+#include <memory> // 智能指针，std::unique_ptr 用到
+#include <random> // 随机数
+#include <sstream> // 字符串流
+#include <stack> // 栈容器，dfs 有用
 #include <string>
 #include <vector>
 
