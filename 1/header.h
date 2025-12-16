@@ -58,6 +58,15 @@ public:
 
 // 模板函数，可参考
 
+template <typename T>
+T min(T a, T b)
+{
+    return a < b ? a : b;
+}
+
+int randomInt(int min, int max);
+double randomDouble();
+
 // 生成随机数
 int randomInt(int min, int max)
 {

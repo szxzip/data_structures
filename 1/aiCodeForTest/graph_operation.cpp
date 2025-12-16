@@ -29,14 +29,14 @@ void Graph::removeEdge(int u, int v)
 {
     if (u >= 0 && u < V && v >= 0 && v < V) {
         // 从u的邻接表中删除v
-        int pos = Utils::find(adj[u], v);
+        int pos = find(adj[u], v);
         if (pos != -1) {
             adj[u][pos] = adj[u].back();
             adj[u].pop_back();
         }
 
         // 从v的邻接表中删除u
-        pos = Utils::find(adj[v], u);
+        pos = find(adj[v], u);
         if (pos != -1) {
             adj[v][pos] = adj[v].back();
             adj[v].pop_back();
@@ -49,88 +49,7 @@ bool Graph::edgeExists(int u, int v) const
 {
     if (u < 0 || u >= V || v < 0 || v >= V)
         return false;
-    return Utils::find(adj[u], v) != -1;
-}
-
-// 深度优先遍历（用于查找关节点）
-void Graph::DFS(int u)
-{
-    int children = 0;
-    visited[u] = true;
-    disc[u] = low[u] = ++time;
-
-    for (size_t i = 0; i < adj[u].size(); i++) {
-        int v = adj[u][i];
-        if (!visited[v]) {
-            children++;
-            parent[v] = u;
-            DFS(v);
-
-            low[u] = Utils::min(low[u], low[v]);
-
-            // 规则1: u是根节点且有多个子节点
-            if (parent[u] == -1 && children > 1)
-                articulationPoints[u] = true;
-
-            // 规则2: u不是根节点且low[v] >= disc[u]
-            if (parent[u] != -1 && low[v] >= disc[u])
-                articulationPoints[u] = true;
-        } else if (v != parent[u]) {
-            low[u] = Utils::min(low[u], disc[v]);
-        }
-    }
-}
-
-// 查找所有关节点
-void Graph::findArticulationPoints()
-{
-    // 重置数据
-    for (int i = 0; i < V; i++) {
-        visited[i] = false;
-        disc[i] = -1;
-        low[i] = -1;
-        parent[i] = -1;
-        articulationPoints[i] = false;
-    }
-    time = 0;
-
-    // 从每个未访问的顶点开始DFS
-    for (int i = 0; i < V; i++) {
-        if (!visited[i]) {
-            DFS(i);
-        }
-    }
-}
-
-// 获取关节点列表
-std::vector<int> Graph::getArticulationPoints() const
-{
-    std::vector<int> result;
-    for (int i = 0; i < V; i++) {
-        if (articulationPoints[i]) {
-            result.push_back(i);
-        }
-    }
-    return result;
-}
-
-// 统计关节点数量
-int Graph::countArticulationPoints() const
-{
-    int count = 0;
-    for (int i = 0; i < V; i++) {
-        if (articulationPoints[i])
-            count++;
-    }
-    return count;
-}
-
-// 判断是否为关节点
-bool Graph::isArticulationPoint(int vertex) const
-{
-    if (vertex < 0 || vertex >= V)
-        return false;
-    return articulationPoints[vertex];
+    return find(adj[u], v) != -1;
 }
 
 // 获取边数

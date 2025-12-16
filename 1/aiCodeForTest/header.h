@@ -61,7 +61,6 @@ public:
 };
 
 // 工具函数
-namespace Utils {
 template <typename T>
 int find(const std::vector<T>& vec, const T& value)
 {
@@ -80,6 +79,5 @@ T min(T a, T b)
 
 int randomInt(int min, int max);
 double randomDouble();
-}
 
 #endif // HEADER_H

@@ -37,7 +37,7 @@ Graph* GraphIO::createRandom(int vertices, double density)
 
     // 确保图连通（生成一棵生成树）
     for (int i = 1; i < vertices; i++) {
-        int parent = Utils::randomInt(0, i - 1);
+        int parent = randomInt(0, i - 1);
         graph->addEdge(i, parent);
     }
 
@@ -47,8 +47,8 @@ Graph* GraphIO::createRandom(int vertices, double density)
     int currentEdges = vertices - 1;
 
     while (currentEdges < targetEdges) {
-        int u = Utils::randomInt(0, vertices - 1);
-        int v = Utils::randomInt(0, vertices - 1);
+        int u = randomInt(0, vertices - 1);
+        int v = randomInt(0, vertices - 1);
 
         if (u != v && !graph->edgeExists(u, v)) {
             graph->addEdge(u, v);
@@ -88,7 +88,7 @@ bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
 }
 
 // 工具函数实现
-int Utils::randomInt(int min, int max)
+int randomInt(int min, int max)
 {
     static bool seeded = false;
     if (!seeded) {
@@ -98,7 +98,7 @@ int Utils::randomInt(int min, int max)
     return min + (std::rand() % (max - min + 1));
 }
 
-double Utils::randomDouble()
+double randomDouble()
 {
     static bool seeded = false;
     if (!seeded) {
