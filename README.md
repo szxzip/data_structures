@@ -43,15 +43,17 @@
 **C**
 1. （2）可以随机、文件及人工输入数据。  
    `读写文件` `随机创建图`
-2. 汇总及 gui
+2. GUI
 
 ### 二
 
-**A** 算法的完整实现
+> 具体函数分工详见 [header.h](https://github.com/szxzip/data_structures/blob/main/2/header.h)。header.h 遇到问题可直接修改。
 
-**B** 矩阵操作
+**A** 匈牙利算法
 
-**C** 文件处理 GUI
+**B** 矩阵数据结构、配对结果
+
+**C** 读写文件 GUI
 
 ## 部署 Windows GUI，以及编译
 
