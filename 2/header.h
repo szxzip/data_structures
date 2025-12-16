@@ -1,11 +1,11 @@
 #ifndef HEADER_H
 #define HEADER_H
 
-#include <algorithm>
-#include <climits>
+#include <algorithm> // 算法
+#include <climits> // 整数极限
 #include <fstream>
 #include <gtk/gtk.h>
-#include <iomanip>
+#include <iomanip> // 输入输出格式化
 #include <iostream>
 #include <sstream>
 #include <string>
