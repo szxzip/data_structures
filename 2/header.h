@@ -64,8 +64,8 @@ extern GtkWidget* n_spinner; // 运动员数量选择器
  * 读写文件 (C)
  * 文件格式：
  * 第一行：n（运动员数量）
- * n行：男对女矩阵（n×n）
- * n行：女对男矩阵（n×n）
+ * n行：男评价女（n×n）
+ * n行：女评价男（n×n）
  */
 bool loadMatrixFromFile(const string& filename, SatisfactionMatrix& matrix);
 void saveMatrixToFile(const string& filename, const SatisfactionMatrix& matrix);
