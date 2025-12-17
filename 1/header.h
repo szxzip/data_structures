@@ -75,7 +75,7 @@ int find(const std::vector<T>& vec, const T& value)
 }
 
 // 生成随机数
-int randomInt(int min, int max)
+inline int randomInt(int min, int max)
 {
     static bool seeded = false;
     if (!seeded) {
@@ -85,7 +85,7 @@ int randomInt(int min, int max)
     return min + (std::rand() % (max - min + 1));
 }
 
-double randomDouble()
+inline double randomDouble()
 {
     static bool seeded = false;
     if (!seeded) {

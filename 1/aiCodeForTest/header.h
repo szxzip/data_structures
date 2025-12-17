@@ -58,6 +58,23 @@ public:
 
 // 模板函数，可参考
 
+template <typename T>
+T min(T a, T b)
+{
+    return a < b ? a : b;
+}
+
+template <typename T>
+int find(const std::vector<T>& vec, const T& value)
+{
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (vec[i] == value)
+            return i;
+    }
+    return -1;
+}
+
+// 生成随机数
 inline int randomInt(int min, int max)
 {
     static bool seeded = false;
@@ -76,20 +93,4 @@ inline double randomDouble()
         seeded = true;
     }
     return static_cast<double>(std::rand()) / RAND_MAX;
-}
-
-template <typename T>
-T min(T a, T b)
-{
-    return a < b ? a : b;
-}
-
-template <typename T>
-int find(const std::vector<T>& vec, const T& value)
-{
-    for (size_t i = 0; i < vec.size(); i++) {
-        if (vec[i] == value)
-            return i;
-    }
-    return -1;
 }
