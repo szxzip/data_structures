@@ -86,24 +86,3 @@ bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
     file.close();
     return true;
 }
-
-// 工具函数实现
-int randomInt(int min, int max)
-{
-    static bool seeded = false;
-    if (!seeded) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-        seeded = true;
-    }
-    return min + (std::rand() % (max - min + 1));
-}
-
-double randomDouble()
-{
-    static bool seeded = false;
-    if (!seeded) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-        seeded = true;
-    }
-    return static_cast<double>(std::rand()) / RAND_MAX;
-}

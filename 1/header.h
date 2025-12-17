@@ -64,8 +64,15 @@ T min(T a, T b)
     return a < b ? a : b;
 }
 
-int randomInt(int min, int max);
-double randomDouble();
+template <typename T>
+int find(const std::vector<T>& vec, const T& value)
+{
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (vec[i] == value)
+            return i;
+    }
+    return -1;
+}
 
 // 生成随机数
 int randomInt(int min, int max)

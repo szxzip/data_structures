@@ -116,28 +116,3 @@ void Graph::resize(int vertices)
     adj.resize(V);
     articulationPoints.resize(V, false);
 }
-
-// 从控制台输入图
-void Graph::inputFromConsole()
-{
-    std::cout << "请输入顶点数: ";
-    std::cin >> V;
-
-    resize(V);
-
-    std::cout << "请输入边数: ";
-    int E;
-    std::cin >> E;
-
-    std::cout << "请输入" << E << "条边 (格式: u v):" << std::endl;
-    for (int i = 0; i < E; i++) {
-        int u, v;
-        std::cin >> u >> v;
-        if (u >= 0 && u < V && v >= 0 && v < V) {
-            addEdge(u, v);
-        } else {
-            std::cout << "无效的边，请重新输入" << std::endl;
-            i--;
-        }
-    }
-}

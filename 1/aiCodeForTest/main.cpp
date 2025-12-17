@@ -189,51 +189,6 @@ static void create_new_graph(GtkWidget* widget, gpointer data)
     gtk_widget_destroy(dialog);
 }
 
-// 手动输入图
-static void input_graph_manually(GtkWidget* widget, gpointer data)
-{
-    GtkWidget* dialog = gtk_dialog_new_with_buttons("手动输入图",
-        GTK_WINDOW(window),
-        GTK_DIALOG_MODAL,
-        "确定", GTK_RESPONSE_OK,
-        "取消", GTK_RESPONSE_CANCEL,
-        NULL);
-
-    GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-
-    GtkWidget* info_label = gtk_label_new("请在控制台输入图的数据");
-    gtk_box_pack_start(GTK_BOX(vbox), info_label, FALSE, FALSE, 0);
-
-    gtk_container_add(GTK_CONTAINER(content), vbox);
-    gtk_widget_show_all(dialog);
-
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
-        // 删除旧图
-        if (currentGraph) {
-            delete currentGraph;
-        }
-
-        currentGraph = new Graph(1); // 临时图
-        currentGraph->inputFromConsole();
-        currentArticulations.clear();
-
-        // 更新显示
-        update_graph_display();
-
-        // 清空关节点列表
-        GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
-        gtk_list_store_clear(store);
-
-        std::stringstream msg;
-        msg << "手动输入图完成，顶点数: " << currentGraph->getVertexCount()
-            << ", 边数: " << currentGraph->getEdgeCount();
-        gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
-    }
-
-    gtk_widget_destroy(dialog);
-}
-
 // 从文件加载图
 static void load_graph_from_file(GtkWidget* widget, gpointer data)
 {
@@ -427,25 +382,6 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
     }
 }
 
-// 显示关于对话框
-static void show_about_dialog(GtkWidget* widget, gpointer data)
-{
-    GtkWidget* dialog = gtk_about_dialog_new();
-    gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(dialog), "关节点求解系统");
-    gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "1.0");
-    gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(dialog), "Copyright © 2024");
-    gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
-        "无向连通图关节点求解程序\n"
-        "功能：\n"
-        "1. 创建随机图或从文件加载图\n"
-        "2. 查找关节点\n"
-        "3. 统计关节点\n"
-        "4. 将关节点改造为非关节点");
-
-    gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
-}
-
 // 初始化GUI
 static void initialize_gui(int argc, char** argv)
 {
@@ -469,14 +405,12 @@ static void initialize_gui(int argc, char** argv)
     GtkWidget* file_menu = gtk_menu_new();
 
     GtkWidget* new_item = gtk_menu_item_new_with_label("新建随机图");
-    GtkWidget* manual_item = gtk_menu_item_new_with_label("手动输入图");
     GtkWidget* open_item = gtk_menu_item_new_with_label("打开图文件");
     GtkWidget* save_item = gtk_menu_item_new_with_label("保存图文件");
     GtkWidget* separator = gtk_separator_menu_item_new();
     GtkWidget* exit_item = gtk_menu_item_new_with_label("退出");
 
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_item);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), manual_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_item);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator);
@@ -497,17 +431,6 @@ static void initialize_gui(int argc, char** argv)
 
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(operation_menu_item), operation_menu);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), operation_menu_item);
-
-    // 帮助菜单
-    GtkWidget* help_menu_item = gtk_menu_item_new_with_label("帮助");
-    GtkWidget* help_menu = gtk_menu_new();
-
-    GtkWidget* about_item = gtk_menu_item_new_with_label("关于");
-
-    gtk_menu_shell_append(GTK_MENU_SHELL(help_menu), about_item);
-
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(help_menu_item), help_menu);
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), help_menu_item);
 
     gtk_box_pack_start(GTK_BOX(main_vbox), menu_bar, FALSE, FALSE, 0);
 
@@ -599,14 +522,12 @@ static void initialize_gui(int argc, char** argv)
     GtkWidget* button_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
     GtkWidget* new_button = gtk_button_new_with_label("新建随机图");
-    GtkWidget* manual_button = gtk_button_new_with_label("手动输入图");
     GtkWidget* open_button = gtk_button_new_with_label("打开图文件");
     GtkWidget* save_button = gtk_button_new_with_label("保存图文件");
     GtkWidget* find_button = gtk_button_new_with_label("查找关节点");
     GtkWidget* count_button = gtk_button_new_with_label("统计关节点");
 
     gtk_box_pack_start(GTK_BOX(button_vbox), new_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(button_vbox), manual_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), open_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), save_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_vbox), find_button, FALSE, FALSE, 0);
@@ -632,13 +553,11 @@ static void initialize_gui(int argc, char** argv)
 
     // 连接信号
     g_signal_connect(new_item, "activate", G_CALLBACK(create_new_graph), NULL);
-    g_signal_connect(manual_item, "activate", G_CALLBACK(input_graph_manually), NULL);
     g_signal_connect(open_item, "activate", G_CALLBACK(load_graph_from_file), NULL);
     g_signal_connect(save_item, "activate", G_CALLBACK(save_graph_to_file), NULL);
     g_signal_connect(exit_item, "activate", G_CALLBACK(gtk_main_quit), NULL);
     g_signal_connect(find_item, "activate", G_CALLBACK(find_articulation_points), NULL);
     g_signal_connect(count_item, "activate", G_CALLBACK(count_articulation_points), NULL);
-    g_signal_connect(about_item, "activate", G_CALLBACK(show_about_dialog), NULL);
 
     g_signal_connect(new_tool, "clicked", G_CALLBACK(create_new_graph), NULL);
     g_signal_connect(open_tool, "clicked", G_CALLBACK(load_graph_from_file), NULL);
@@ -647,7 +566,6 @@ static void initialize_gui(int argc, char** argv)
     g_signal_connect(count_tool, "clicked", G_CALLBACK(count_articulation_points), NULL);
 
     g_signal_connect(new_button, "clicked", G_CALLBACK(create_new_graph), NULL);
-    g_signal_connect(manual_button, "clicked", G_CALLBACK(input_graph_manually), NULL);
     g_signal_connect(open_button, "clicked", G_CALLBACK(load_graph_from_file), NULL);
     g_signal_connect(save_button, "clicked", G_CALLBACK(save_graph_to_file), NULL);
     g_signal_connect(find_button, "clicked", G_CALLBACK(find_articulation_points), NULL);
