@@ -9,6 +9,156 @@ SatisfactionMatrix current_matrix;
 MatchingResult current_result;
 GtkWidget* n_spinner;
 
+// 在main.cpp中添加
+#include <cassert>
+
+/**
+ * @brief 测试确定性问题
+ * 测试几个已知最优解的小规模问题
+ */
+void test_deterministic_cases()
+{
+    cout << "\n=== 测试确定性问题 ===" << endl;
+
+    // 测试1：n=2，显然的最优解
+    {
+        cout << "\n测试1：n=2" << endl;
+        SatisfactionMatrix matrix(2);
+
+        // 手动设置矩阵值
+        matrix.mf[0][0] = 100;
+        matrix.mf[0][1] = 1;
+        matrix.mf[1][0] = 1;
+        matrix.mf[1][1] = 100;
+
+        matrix.fm[0][0] = 100;
+        matrix.fm[0][1] = 1;
+        matrix.fm[1][0] = 1;
+        matrix.fm[1][1] = 100;
+
+        // 使用控制台输出代替display()
+        cout << "矩阵内容:" << endl;
+        cout << "男对女:" << endl;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                cout << matrix.mf[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        HungarianAlgorithm hungarian;
+        BruteForceSolver brute;
+
+        MatchingResult h_result = hungarian.solve(matrix);
+        MatchingResult b_result = brute.solve(matrix);
+
+        cout << "匈牙利算法结果: " << h_result.totalScore << endl;
+        cout << "暴力搜索结果: " << b_result.totalScore << endl;
+
+        if (h_result.totalScore != b_result.totalScore) {
+            cout << "❌ 测试失败！结果不一致" << endl;
+            // 手动输出结果
+            cout << "匈牙利算法匹配: ";
+            for (int i = 0; i < 2; i++) {
+                cout << "男" << i + 1 << "->女" << h_result.pairs[i] + 1 << " ";
+            }
+            cout << endl;
+
+            cout << "暴力搜索匹配: ";
+            for (int i = 0; i < 2; i++) {
+                cout << "男" << i + 1 << "->女" << b_result.pairs[i] + 1 << " ";
+            }
+            cout << endl;
+        } else {
+            cout << "✓ 测试通过" << endl;
+        }
+    }
+}
+
+// 新增：验证选项
+bool enable_verification = true; // 默认启用验证
+GtkWidget* verify_toggle = nullptr; // 验证开关按钮
+
+/**
+ * @brief 验证匈牙利算法的结果
+ */
+AlgorithmComparison verify_hungarian_result(
+    const SatisfactionMatrix& matrix,
+    const MatchingResult& hungarian_result,
+    double hungarian_time)
+{
+
+    AlgorithmComparison comparison(matrix.n);
+    comparison.hungarian = hungarian_result;
+    comparison.hungarianTime = hungarian_time;
+    comparison.n = matrix.n;
+
+    // 检查是否启用验证
+    if (!enable_verification) {
+        cout << "[验证] 验证功能已禁用" << endl;
+        comparison.isOptimal = true;
+        comparison.scoreDifference = 0;
+        return comparison;
+    }
+
+    // 检查规模是否适合验证
+    if (matrix.n > 10) {
+        cout << "[验证] 跳过验证，n=" << matrix.n << " 太大（建议n≤10）" << endl;
+        comparison.isOptimal = true;
+        comparison.scoreDifference = 0;
+        return comparison;
+    }
+
+    cout << "\n=== 开始暴力搜索验证 ===" << endl;
+    cout << "问题规模: n = " << matrix.n << endl;
+
+    // 使用暴力搜索求解
+    BruteForceSolver bruteSolver;
+    auto brute_start = chrono::high_resolution_clock::now();
+    MatchingResult bruteResult = bruteSolver.solve(matrix);
+    auto brute_end = chrono::high_resolution_clock::now();
+
+    comparison.bruteForceTime = chrono::duration_cast<chrono::milliseconds>(
+        brute_end - brute_start)
+                                    .count();
+    comparison.bruteForce = bruteResult;
+
+    // 比较结果
+    comparison.scoreDifference = bruteResult.totalScore - hungarian_result.totalScore;
+    comparison.isOptimal = (comparison.scoreDifference == 0);
+
+    // 显示对比结果
+    comparison.displayComparison();
+
+    return comparison;
+}
+
+/**
+ * @brief 验证开关按钮回调函数
+ */
+void on_verify_toggled(GtkToggleButton* button, gpointer data)
+{
+    enable_verification = gtk_toggle_button_get_active(button);
+    const char* state = enable_verification ? "启用" : "禁用";
+    cout << "验证功能: " << state << endl;
+
+    // 可选：在按钮上显示当前状态
+    if (enable_verification) {
+        gtk_button_set_label(GTK_BUTTON(button), "✓ 验证已启用");
+    } else {
+        gtk_button_set_label(GTK_BUTTON(button), "✗ 验证已禁用");
+    }
+}
+
+/**
+ * @brief 测试按钮回调函数
+ */
+void on_test_clicked(GtkWidget* widget, gpointer data)
+{
+    cout << "\n=== 运行算法测试 ===" << endl;
+    test_deterministic_cases();
+}
+
 /**
  * @brief 从文件加载矩阵数据
  */
@@ -166,6 +316,78 @@ void update_result_display(GtkWidget* textview, const MatchingResult& result)
 }
 
 /**
+ * @brief 更新结果显示（带对比信息）
+ */
+void update_result_display_with_comparison(
+    GtkWidget* textview,
+    const MatchingResult& result,
+    const AlgorithmComparison& comparison)
+{
+
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview));
+    gtk_text_buffer_set_text(buffer, "", -1);
+
+    GtkTextIter iter;
+    gtk_text_buffer_get_start_iter(buffer, &iter);
+
+    // 匈牙利算法结果
+    string result_text = "=== 匈牙利算法结果 ===\n\n";
+    result_text += "最佳匹配:\n";
+
+    for (size_t i = 0; i < result.pairs.size(); i++) {
+        if (result.pairs[i] != -1) {
+            result_text += "  男" + to_string(i + 1) + " ←→ 女" + to_string(result.pairs[i] + 1) + "\n";
+        }
+    }
+
+    result_text += "\n满意度分数:\n";
+    result_text += "  男方总满意度: " + to_string(result.maleScore) + "\n";
+    result_text += "  女方总满意度: " + to_string(result.femaleScore) + "\n";
+    result_text += "  总满意度: " + to_string(result.totalScore) + "\n";
+    result_text += "  求解时间: " + to_string(comparison.hungarianTime) + " ms\n";
+
+    // 如果进行了验证，添加对比信息
+    if (enable_verification && comparison.n <= 10) {
+        result_text += "\n=== 算法验证结果 ===\n\n";
+
+        if (comparison.isOptimal) {
+            result_text += "✓ 验证通过：匈牙利算法找到了最优解\n\n";
+        } else {
+            result_text += "✗ 验证未通过：匈牙利算法未找到最优解\n";
+            result_text += "  暴力搜索最优解: " + to_string(comparison.bruteForce.totalScore) + "\n";
+            result_text += "  分数差值: " + to_string(comparison.scoreDifference) + "\n\n";
+        }
+
+        result_text += "暴力搜索结果:\n";
+        result_text += "  总满意度: " + to_string(comparison.bruteForce.totalScore) + "\n";
+        result_text += "  求解时间: " + to_string(comparison.bruteForceTime) + " ms\n";
+        result_text += "  速度比: " + to_string(comparison.bruteForceTime / comparison.hungarianTime) + " 倍\n";
+
+        // 显示不同的配对
+        result_text += "\n不同的匹配:\n";
+        int diffCount = 0;
+        for (int i = 0; i < comparison.n; i++) {
+            if (result.pairs[i] != comparison.bruteForce.pairs[i]) {
+                result_text += "  男" + to_string(i + 1) + ": 匈牙利→女" + to_string(result.pairs[i] + 1) + ", 暴力搜索→女" + to_string(comparison.bruteForce.pairs[i] + 1) + "\n";
+                diffCount++;
+            }
+        }
+        if (diffCount == 0) {
+            result_text += "  无（满意度计算方法不同）\n";
+        }
+    } else if (enable_verification) {
+        result_text += "\n验证信息:\n";
+        result_text += "  n=" + to_string(comparison.n) + " 较大，跳过暴力搜索验证\n";
+        result_text += "  （建议 n≤10 时使用验证功能）\n";
+    } else {
+        result_text += "\n验证信息:\n";
+        result_text += "  验证功能已禁用\n";
+    }
+
+    gtk_text_buffer_insert(buffer, &iter, result_text.c_str(), -1);
+}
+
+/**
  * @brief 生成随机矩阵按钮回调
  */
 void on_generate_clicked(GtkWidget* widget, gpointer data)
@@ -206,10 +428,43 @@ void on_solve_clicked(GtkWidget* widget, gpointer data)
         return;
     }
 
+    // 记录开始时间
+    auto start_time = chrono::high_resolution_clock::now();
+
+    // 使用匈牙利算法求解
     HungarianAlgorithm solver;
     current_result = solver.solve(current_matrix);
 
-    update_result_display(result_textview, current_result);
+    // 记录结束时间
+    auto end_time = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    double hungarian_time = duration.count();
+
+    cout << "\n[匈牙利算法] 完成！" << endl;
+    cout << "[匈牙利算法] 用时: " << hungarian_time << " ms" << endl;
+    cout << "[匈牙利算法] 总满意度: " << current_result.totalScore << endl;
+
+    // 验证结果
+    AlgorithmComparison comparison = verify_hungarian_result(
+        current_matrix, current_result, hungarian_time);
+
+    // 更新GUI显示
+    update_result_display_with_comparison(result_textview, current_result, comparison);
+
+    // 如果验证失败，显示警告
+    if (!comparison.isOptimal && enable_verification && current_matrix.n <= 10) {
+        string message = "匈牙利算法可能未找到最优解\n";
+        message += "暴力搜索结果比当前解高 " + to_string(comparison.scoreDifference) + " 分\n";
+        message += "详情请查看控制台输出";
+
+        GtkWidget* dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL,
+            GTK_MESSAGE_WARNING,
+            GTK_BUTTONS_OK,
+            "%s", message.c_str());
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+    }
 }
 
 /**
@@ -334,6 +589,20 @@ void activate(GtkApplication* app, gpointer user_data)
     GtkWidget* save_button = gtk_button_new_with_label("保存文件");
     g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_clicked), NULL);
     gtk_box_pack_start(GTK_BOX(control_box), save_button, FALSE, FALSE, 0);
+
+    // 修改后的验证开关按钮
+    verify_toggle = gtk_toggle_button_new_with_label("✓ 验证已启用");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(verify_toggle), enable_verification);
+
+    g_signal_connect(verify_toggle, "toggled",
+        G_CALLBACK(on_verify_toggled), NULL);
+
+    gtk_box_pack_start(GTK_BOX(control_box), verify_toggle, FALSE, FALSE, 0);
+
+    // 在activate函数中添加测试按钮：
+    GtkWidget* test_button = gtk_button_new_with_label("运行测试");
+    g_signal_connect(test_button, "clicked", G_CALLBACK(on_test_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(control_box), test_button, FALSE, FALSE, 0);
 
     // 创建水平布局放置两个矩阵
     GtkWidget* matrix_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
