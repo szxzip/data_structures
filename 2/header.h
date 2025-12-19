@@ -38,19 +38,19 @@ public:
 // 匈牙利算法（A）
 class HungarianAlgorithm {
 private:
-    vector<vector<int>> cost; // 成本矩阵（用于最小权匹配）
-    vector<int> lx, ly; // 顶标（X部和Y部顶点的标签值）
+    vector<vector<int>> total; // 总的期望矩阵 就是把男女对彼此的期望相加
+    vector<int> ex, ey; // 男女期望
     vector<int> matchX, matchY; // 匹配结果 matchX[i]=j表示男i匹配女j
     vector<bool> visitedX, visitedY; // DFS搜索时的访问标记
-    vector<int> slack; // 松弛量，用于顶标调整
-    int n; // 问题规模
-    bool dfs(int u); // DFS深度优先搜索，在相等子图中寻找增广路
-    void updateLabels(); // 更新顶标函数，当找不到增广路时调整顶标
+    vector<int> slack; // 松弛量，用于调整期望
+    int N; // 问题规模
+    bool dfs(int u); // DFS深度优先搜索，为某一位男队员匹配，返回成功与否
 
 public:
     HungarianAlgorithm(); // 构造函数
     MatchingResult solve(const SatisfactionMatrix& matrix); // 计算配对结果
 };
+
 
 // GUI (C)
 extern GtkWidget* male_grid; // 男对女矩阵显示网格
