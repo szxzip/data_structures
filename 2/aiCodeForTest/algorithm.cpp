@@ -114,33 +114,34 @@ MatchingResult BruteForceSolver::solve(const SatisfactionMatrix& matrix)
     return bestResult;
 }
 
-/**
- * @brief HungarianAlgorithm构造函数
- */
-HungarianAlgorithm::HungarianAlgorithm() { }
+HungarianAlgorithm::HungarianAlgorithm()
+    : n(0)
+{
+    // 构造函数初始化
+}
 
-/**
- * @brief DFS函数 - 寻找增广路
- */
 bool HungarianAlgorithm::dfs(int u)
 {
-    visitedX[u] = true;
 
-    for (int v = 0; v < n; v++) {
-        if (!visitedY[v]) {
-            int gap = lx[u] + ly[v] - cost[u][v];
+    visitedX[u] = true; // 表示该男选手已访问
 
-            if (gap == 0) { // 在相等子图中
-                visitedY[v] = true;
+    for (int w = 0; w < N; w++) {
+        if (visitedY[w]) { // 跳过已经访问过的女选手，防止重复递归
+            continue;
+        }
 
-                if (matchY[v] == -1 || dfs(matchY[v])) {
-                    matchX[u] = v;
-                    matchY[v] = u;
-                    return true;
-                }
-            } else {
-                slack[v] = min(slack[v], gap);
+        int gap = ex[u] + ey[w] - total[u][w]; // 计算男女选手期望只和与总期望矩阵对应项的差
+
+        if (gap == 0) {
+            visitedY[w] = true; // 记录该女选手已经被访问
+
+            if (matchY[w] == -1 || dfs(matchY[w])) { // 如果该女选手还没有匹配搭档或者她现在的搭档可以再另寻一个女选手组队
+                matchX[u] = w;
+                matchY[w] = u;
+                return true;
             }
+        } else {
+            slack[w] = min(slack[w], gap); // 更新这位女选手的松弛量，可以理解为还差多少期望可以找到一个搭档
         }
     }
 
@@ -176,224 +177,95 @@ void HungarianAlgorithm::updateLabels()
     }
 }
 
-/**
- * @brief 解决最大权匹配问题
- */
 MatchingResult HungarianAlgorithm::solve(const SatisfactionMatrix& matrix)
 {
-    n = matrix.n;
-    if (n == 0) {
-        cout << "[匈牙利算法] 空矩阵，返回空结果" << endl;
-        return MatchingResult(0);
+
+    // 处理n=0边界情况
+    if (matrix.n == 0) {
+        MatchingResult result(0);
+        return result;
     }
 
-    cout << "\n[匈牙利算法] ====== 开始求解 ======" << endl;
-    cout << "[匈牙利算法] 问题规模: n = " << n << endl;
+    N = matrix.n; // 问题规模为n人
 
-    // ====== 步骤1：构建总满意度矩阵 ======
-    vector<vector<int>> totalMatrix(n, vector<int>(n, 0));
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            totalMatrix[i][j] = matrix.mf[i][j] + matrix.fm[j][i];
+    total.resize(N, vector<int>(N, 0)); // 构建满意度矩阵
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            // 总满意度 = 男对女的满意度 + 女对男的满意度
+            total[i][j] = matrix.mf[i][j] + matrix.fm[j][i];
         }
     }
 
-    // 显示总满意度矩阵（调试用）
-    cout << "[匈牙利算法] 总满意度矩阵:" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "  ";
-        for (int j = 0; j < n; j++) {
-            cout << setw(4) << totalMatrix[i][j] << " ";
+    ex.resize(N, 0); // 初始化期望值数组
+    ey.resize(N, 0);
+    matchX.resize(N, -1); // 初始化匹配数组
+    matchY.resize(N, -1);
+    visitedX.resize(N, false);
+    visitedY.resize(N, false);
+    slack.resize(N, 0);
+
+    for (int m = 0; m < N; m++) { // 设置男选手的期望值，等于他与最合适的女选手之间的期望和
+        for (int w = 0; w < N; w++) {
+            ex[m] = max(ex[m], total[m][w]);
         }
-        cout << endl;
     }
 
-    // ====== 步骤2：转换为最小权匹配问题 ======
-    // 匈牙利算法解决最小权匹配，我们需要将最大权转换为最小权
-    cost = totalMatrix;
+    // 为每一个男选手寻找搭档
+    for (int u = 0; u < N; u++) {
 
-    // 找到总满意度矩阵中的最大值
-    int maxWeight = 0;
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (totalMatrix[i][j] > maxWeight) {
-                maxWeight = totalMatrix[i][j];
+        // 每次为新的男选手寻找匹配时，重置所有女选手松弛量为最大值,因为后面要找最小
+        for (int v = 0; v < N; v++) {
+            slack[v] = INT_MAX;
+        }
+
+        while (1) { // 进入循环，直到匹配完成
+            for (int i = 0; i < N; i++) { // 对于每一个男性选手的匹配过程都要重置两边选手的访问标记
+                visitedX[i] = false;
+                visitedY[i] = false;
             }
-        }
-    }
-    cout << "[匈牙利算法] 最大权重值: " << maxWeight << endl;
 
-    // 转换公式：cost[i][j] = maxWeight - totalMatrix[i][j]
-    // 这样最大值变为0，最小值变为正数，求最小权匹配
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            cost[i][j] = maxWeight - totalMatrix[i][j];
-        }
-    }
-
-    // 显示成本矩阵（调试用）
-    cout << "[匈牙利算法] 转换后的成本矩阵 (最大权-" << maxWeight << "):" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "  ";
-        for (int j = 0; j < n; j++) {
-            cout << setw(4) << cost[i][j] << " ";
-        }
-        cout << endl;
-    }
-
-    // ====== 步骤3：初始化匈牙利算法数据结构 ======
-    lx.assign(n, 0); // X部顶标
-    ly.assign(n, 0); // Y部顶标
-    matchX.assign(n, -1); // X部匹配结果，matchX[i]=j表示男i匹配女j
-    matchY.assign(n, -1); // Y部匹配结果，matchY[j]=i表示女j匹配男i
-    visitedX.assign(n, false); // X部访问标记
-    visitedY.assign(n, false); // Y部访问标记
-    slack.assign(n, 0); // 松弛量
-
-    // 初始化顶标：lx[i] = max(cost[i][j])，即行最大值
-    for (int i = 0; i < n; i++) {
-        lx[i] = *max_element(cost[i].begin(), cost[i].end());
-    }
-
-    cout << "[匈牙利算法] 初始化顶标 lx: ";
-    for (int i = 0; i < n; i++)
-        cout << lx[i] << " ";
-    cout << endl;
-
-    // ====== 步骤4：匈牙利算法主循环 ======
-    cout << "[匈牙利算法] 开始主循环，为每个X部顶点寻找匹配..." << endl;
-
-    for (int u = 0; u < n; u++) {
-        if (u > 0) {
-            cout << "[匈牙利算法] 处理男运动员 " << u + 1 << "..." << endl;
-        }
-
-        // 初始化slack为无穷大
-        slack.assign(n, INT_MAX);
-
-        int attempt = 0;
-        while (true) {
-            attempt++;
-            visitedX.assign(n, false);
-            visitedY.assign(n, false);
-
-            // 使用DFS在相等子图中寻找增广路
-            if (dfs(u)) {
-                // 找到增广路，成功匹配
-                if (u > 0 && attempt > 1) {
-                    cout << "  [迭代 " << attempt << "] 找到增广路，匹配成功" << endl;
-                }
+            if (dfs(u)) { // 找到搭档就可以退出循环了
                 break;
             }
-
-            // 如果没有找到增广路，需要调整顶标
-            if (attempt == 1) {
-                cout << "  [迭代 " << attempt << "] 未找到增广路，调整顶标..." << endl;
+            // 没有找到的话，需要调整期望值
+            int d = INT_MAX; // d表示需要调整的期望大小
+            for (int v = 0; v < N; v++) { // 找最小松弛量
+                if (!visitedY[v]) { // 从未访问的女选手中找最小slack作为d值
+                    d = min(d, slack[v]);
+                }
             }
 
-            updateLabels();
-        }
-    }
+            for (int j = 0; j < N; j++) {
+                if (visitedX[j]) { // 本轮参与匹配的男选手减少期望值
+                    ex[j] -= d;
+                }
 
-    // ====== 步骤5：输出匹配结果和调试信息 ======
-    cout << "[匈牙利算法] 算法完成，匹配结果如下:" << endl;
-    cout << "  男运动员 | 匹配的女运动员" << endl;
-    cout << "  --------|--------------" << endl;
-
-    for (int i = 0; i < n; i++) {
-        if (matchX[i] != -1) {
-            cout << "    男" << setw(2) << i + 1 << "   ->   女"
-                 << setw(2) << matchX[i] + 1
-                 << "   (原满意度: " << totalMatrix[i][matchX[i]]
-                 << " = " << matrix.mf[i][matchX[i]] << "(男) + "
-                 << matrix.fm[matchX[i]][i] << "(女))" << endl;
-        } else {
-            cout << "    男" << setw(2) << i + 1 << "   ->   未匹配" << endl;
-        }
-    }
-
-    // ====== 步骤6：构建返回结果 ======
-    MatchingResult result(n);
-    result.totalScore = 0;
-    result.maleScore = 0;
-    result.femaleScore = 0;
-
-    for (int i = 0; i < n; i++) {
-        if (matchX[i] != -1) {
-            int j = matchX[i];
-            result.pairs[i] = j;
-            result.totalScore += totalMatrix[i][j]; // 总满意度
-            result.maleScore += matrix.mf[i][j]; // 男方满意度
-            result.femaleScore += matrix.fm[j][i]; // 女方满意度
-        }
-    }
-
-    // ====== 步骤7：验证匹配的完整性 ======
-    bool completeMatch = true;
-    for (int i = 0; i < n; i++) {
-        if (matchX[i] == -1) {
-            completeMatch = false;
-            cout << "[警告] 男运动员 " << i + 1 << " 未匹配！" << endl;
-        }
-    }
-
-    if (completeMatch) {
-        cout << "[匈牙利算法] ✓ 找到完美匹配（所有人都有搭档）" << endl;
-    } else {
-        cout << "[匈牙利算法] ✗ 未找到完美匹配" << endl;
-    }
-
-    // 检查一一对应关系
-    vector<bool> femaleUsed(n, false);
-    bool oneToOne = true;
-    for (int i = 0; i < n; i++) {
-        if (matchX[i] != -1) {
-            int j = matchX[i];
-            if (j < 0 || j >= n) {
-                cout << "[错误] 无效的女运动员索引: " << j << endl;
-                oneToOne = false;
-            } else if (femaleUsed[j]) {
-                cout << "[错误] 女运动员 " << j + 1 << " 被重复匹配！" << endl;
-                oneToOne = false;
-            } else {
-                femaleUsed[j] = true;
+                if (visitedY[j]) { // 本轮参与匹配的女选手增加期望值
+                    ey[j] += d;
+                } else { // 本轮未参与的女选手slack降低
+                    slack[j] -= d;
+                }
             }
         }
     }
 
-    // 检查是否有女运动员未匹配
-    for (int j = 0; j < n; j++) {
-        if (!femaleUsed[j] && matchY[j] == -1) {
-            cout << "[警告] 女运动员 " << j + 1 << " 未匹配！" << endl;
-        }
-    }
+    // 上面做完了匹配的任务，下面是计算结果了
+    int res = 0; // 分别计算总，男，女满意度
+    int mSat = 0;
+    int fSat = 0;
+    MatchingResult result(N);
 
-    if (oneToOne) {
-        cout << "[匈牙利算法] ✓ 匹配满足一一对应关系" << endl;
+    for (int i = 0; i < N; i++) {
+        if (matchX[i] == -1 || matchY[i] == -1) // 理论上不会没有匹配，以防万一跳过未被匹配的项
+            continue;
+        res += total[i][matchX[i]];
+        mSat += matrix.mf[i][matchX[i]];
+        fSat += matrix.fm[i][matchY[i]];
+        result.pairs[i] = matchX[i];
     }
-
-    // ====== 步骤8：输出最终统计信息 ======
-    cout << "[匈牙利算法] ====== 求解完成 ======" << endl;
-    cout << "[匈牙利算法] 总满意度: " << result.totalScore << endl;
-    cout << "[匈牙利算法] 男方满意度: " << result.maleScore << endl;
-    cout << "[匈牙利算法] 女方满意度: " << result.femaleScore << endl;
-    cout << "[匈牙利算法] 平均每人满意度: "
-         << (n > 0 ? result.totalScore / (2.0 * n) : 0) << endl;
-
-    // 计算匹配方案的方差（衡量公平性）
-    if (n > 0) {
-        double avgPerPair = result.totalScore / (double)n;
-        double variance = 0.0;
-        for (int i = 0; i < n; i++) {
-            if (matchX[i] != -1) {
-                double diff = totalMatrix[i][matchX[i]] - avgPerPair;
-                variance += diff * diff;
-            }
-        }
-        variance /= n;
-        cout << "[匈牙利算法] 匹配方案方差: " << variance
-             << " (值越小越公平)" << endl;
-    }
+    result.totalScore = res;
+    result.maleScore = mSat;
+    result.femaleScore = fSat;
 
     return result;
 }
