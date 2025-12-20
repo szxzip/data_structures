@@ -16,6 +16,7 @@ using namespace std;
 // 矩阵数据结构（B）
 class SatisfactionMatrix {
 public:
+    // 满意度取值为 0-100
     vector<vector<int>> mf; // 男对女满意度矩阵 (n x n)
     vector<vector<int>> fm; // 女对男满意度矩阵 (n x n)
     int n; // 运动员数量
@@ -50,7 +51,6 @@ public:
     HungarianAlgorithm(); // 构造函数
     MatchingResult solve(const SatisfactionMatrix& matrix); // 计算配对结果
 };
-
 
 // GUI (C)
 extern GtkWidget* male_grid; // 男对女矩阵显示网格
