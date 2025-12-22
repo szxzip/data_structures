@@ -10,9 +10,9 @@ static GtkWidget* vertex_entry = nullptr;
 static GtkWidget* density_scale = nullptr;
 
 static Graph* currentGraph = nullptr;
-static std::vector<int> currentArticulations;
-static std::vector<std::pair<double, double>> vertexPositions;
-static std::vector<std::pair<int, int>> edgeList;
+static vector<int> currentArticulations;
+static vector<pair<double, double>> vertexPositions;
+static vector<pair<int, int>> edgeList;
 
 // 更新图显示
 void update_graph_display()
@@ -27,25 +27,25 @@ void update_graph_display()
 
     for (int i = 0; i < V; i++) {
         double angle = 2 * 3.141592653589793 * i / V;
-        double x = centerX + radius * std::cos(angle);
-        double y = centerY + radius * std::sin(angle);
-        vertexPositions.push_back(std::make_pair(x, y));
+        double x = centerX + radius * cos(angle);
+        double y = centerY + radius * sin(angle);
+        vertexPositions.push_back(make_pair(x, y));
     }
 
     // 获取边列表
     edgeList.clear();
-    const std::vector<std::vector<int>>& adj = currentGraph->getAdjacencyList();
+    const vector<vector<int>>& adj = currentGraph->getAdjacencyList();
     for (int i = 0; i < V; i++) {
         for (size_t j = 0; j < adj[i].size(); j++) {
             int neighbor = adj[i][j];
             if (i < neighbor) { // 避免重复
-                edgeList.push_back(std::make_pair(i, neighbor));
+                edgeList.push_back(make_pair(i, neighbor));
             }
         }
     }
 
     // 更新信息标签
-    std::stringstream info;
+    stringstream info;
     info << "顶点数: " << V << " | 边数: " << currentGraph->getEdgeCount()
          << " | 关节点数: " << currentArticulations.size();
 
@@ -119,7 +119,7 @@ static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
         cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
         cairo_set_font_size(cr, 12);
 
-        std::string label = std::to_string(i);
+        string label = to_string(i);
         cairo_text_extents_t extents;
         cairo_text_extents(cr, label.c_str(), &extents);
         cairo_move_to(cr, x - extents.width / 2, y + extents.height / 2);
@@ -181,7 +181,7 @@ static void create_new_graph(GtkWidget* widget, gpointer data)
         GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
         gtk_list_store_clear(store);
 
-        std::stringstream msg;
+        stringstream msg;
         msg << "创建了随机图，顶点数: " << vertices << ", 边数: " << currentGraph->getEdgeCount();
         gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
     }
@@ -221,7 +221,7 @@ static void load_graph_from_file(GtkWidget* widget, gpointer data)
             GtkListStore* store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(articulation_list)));
             gtk_list_store_clear(store);
 
-            std::stringstream msg;
+            stringstream msg;
             msg << "从文件加载图成功，顶点数: " << currentGraph->getVertexCount()
                 << ", 边数: " << currentGraph->getEdgeCount();
             gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
@@ -293,11 +293,11 @@ static void find_articulation_points(GtkWidget* widget, gpointer data)
     for (size_t i = 0; i < currentArticulations.size(); i++) {
         GtkTreeIter iter;
         gtk_list_store_append(store, &iter);
-        std::string vertex_str = std::to_string(currentArticulations[i]);
+        string vertex_str = to_string(currentArticulations[i]);
         gtk_list_store_set(store, &iter, 0, vertex_str.c_str(), -1);
     }
 
-    std::stringstream msg;
+    stringstream msg;
     msg << "找到 " << currentArticulations.size() << " 个关节点";
     gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
 }
@@ -311,7 +311,7 @@ static void count_articulation_points(GtkWidget* widget, gpointer data)
     }
 
     int count = currentGraph->countArticulationPoints();
-    std::stringstream msg;
+    stringstream msg;
     msg << "关节点总数: " << count;
 
     // 显示消息对话框
@@ -334,12 +334,12 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
     }
 
     const char* vertex_text = gtk_entry_get_text(GTK_ENTRY(vertex_entry));
-    if (std::strlen(vertex_text) == 0) {
+    if (strlen(vertex_text) == 0) {
         gtk_label_set_text(GTK_LABEL(status_label), "请输入顶点编号！");
         return;
     }
 
-    int vertex = std::stoi(vertex_text);
+    int vertex = stoi(vertex_text);
 
     if (vertex < 0 || vertex >= currentGraph->getVertexCount()) {
         gtk_label_set_text(GTK_LABEL(status_label), "顶点编号无效！");
@@ -347,7 +347,7 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
     }
 
     if (!currentGraph->isArticulationPoint(vertex)) {
-        std::stringstream msg;
+        stringstream msg;
         msg << "顶点 " << vertex << " 不是关节点！";
         gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
         return;
@@ -368,15 +368,15 @@ static void convert_articulation_point(GtkWidget* widget, gpointer data)
         for (size_t i = 0; i < currentArticulations.size(); i++) {
             GtkTreeIter iter;
             gtk_list_store_append(store, &iter);
-            std::string vertex_str = std::to_string(currentArticulations[i]);
+            string vertex_str = to_string(currentArticulations[i]);
             gtk_list_store_set(store, &iter, 0, vertex_str.c_str(), -1);
         }
 
-        std::stringstream msg;
+        stringstream msg;
         msg << "成功将顶点 " << vertex << " 改造为非关节点";
         gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
     } else {
-        std::stringstream msg;
+        stringstream msg;
         msg << "改造顶点 " << vertex << " 失败";
         gtk_label_set_text(GTK_LABEL(status_label), msg.str().c_str());
     }

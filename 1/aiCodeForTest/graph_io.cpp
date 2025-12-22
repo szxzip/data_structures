@@ -1,11 +1,11 @@
 #include "header.h"
 
 // 从文件创建图
-Graph* GraphIO::createFromFile(const std::string& filename)
+Graph* GraphIO::createFromFile(const string& filename)
 {
-    std::ifstream file(filename);
+    ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "无法打开文件: " << filename << std::endl;
+        cerr << "无法打开文件: " << filename << endl;
         return nullptr;
     }
 
@@ -18,7 +18,7 @@ Graph* GraphIO::createFromFile(const std::string& filename)
     for (int i = 0; i < E; i++) {
         int u, v;
         if (!(file >> u >> v)) {
-            std::cerr << "错误：第 " << i + 1 << " 条边读取失败，检查文件是否规范！" << std::endl;
+            cerr << "错误：第 " << i + 1 << " 条边读取失败，检查文件是否规范！" << endl;
             file.close();
             delete graph;
             return nullptr;
@@ -60,9 +60,9 @@ Graph* GraphIO::createRandom(int vertices, double density)
 }
 
 // 保存图到文件
-bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
+bool GraphIO::saveToFile(const Graph& graph, const string& filename)
 {
-    std::ofstream file(filename);
+    ofstream file(filename);
     if (!file.is_open()) {
         return false;
     }
@@ -70,15 +70,15 @@ bool GraphIO::saveToFile(const Graph& graph, const std::string& filename)
     int V = graph.getVertexCount();
     int E = graph.getEdgeCount();
 
-    file << V << " " << E << std::endl;
+    file << V << " " << E << endl;
 
     // 保存边
     for (int i = 0; i < V; i++) {
-        const std::vector<int>& neighbors = graph.getAdjacencyList()[i];
+        const vector<int>& neighbors = graph.getAdjacencyList()[i];
         for (size_t j = 0; j < neighbors.size(); j++) {
             int neighbor = neighbors[j];
             if (i < neighbor) { // 避免重复保存
-                file << i << " " << neighbor << std::endl;
+                file << i << " " << neighbor << endl;
             }
         }
     }

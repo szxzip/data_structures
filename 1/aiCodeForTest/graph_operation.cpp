@@ -66,11 +66,11 @@ int Graph::getEdgeCount() const
 void Graph::printGraph() const
 {
     for (int i = 0; i < V; i++) {
-        std::cout << "顶点 " << i << ": ";
+        cout << "顶点 " << i << ": ";
         for (size_t j = 0; j < adj[i].size(); j++) {
-            std::cout << adj[i][j] << " ";
+            cout << adj[i][j] << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
 }
 

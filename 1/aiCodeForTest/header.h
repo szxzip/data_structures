@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 // 图类定义
 class Graph {
 private:
@@ -59,7 +61,7 @@ public:
 // 模板函数，可参考
 
 template <typename T>
-T min(T a, T b)
+T min2(T a, T b)
 {
     return a < b ? a : b;
 }

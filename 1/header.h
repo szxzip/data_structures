@@ -8,16 +8,18 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 // 图类定义
 class Graph {
 private:
     int V; // 顶点数
-    std::vector<std::vector<int>> adj; // 邻接表
-    std::vector<bool> visited; // 是否发现
-    std::vector<int> disc; // 发现时间（时间戳）
-    std::vector<int> low; // 最小非父可达节点
-    std::vector<int> parent; // 父节点
-    std::vector<bool> articulationPoints; // 关节点
+    vector<vector<int>> adj; // 邻接表
+    vector<bool> visited; // 是否发现
+    vector<int> disc; // 发现时间（时间戳）
+    vector<int> low; // 最小非父可达节点
+    vector<int> parent; // 父节点
+    vector<bool> articulationPoints; // 关节点
     int time; // DFS时间计数器
 
     // B
@@ -37,12 +39,12 @@ public:
 
     // B
     void findArticulationPoints(); // 查找所有关节点
-    std::vector<int> getArticulationPoints() const; // 获取关节点列表
+    vector<int> getArticulationPoints() const; // 获取关节点列表
     int countArticulationPoints() const; // 统计关节点数量
     bool isArticulationPoint(int vertex) const; // 判断是否为关节点
 
     // 辅助函数
-    const std::vector<std::vector<int>>& getAdjacencyList() const { return adj; } // 获取邻接表
+    const vector<vector<int>>& getAdjacencyList() const { return adj; } // 获取邻接表
     void clear(); // 清除图
     void resize(int vertices); // 重置图大小
 };
@@ -51,21 +53,21 @@ public:
 class GraphIO {
 public:
     // C
-    static Graph* createFromFile(const std::string& filename); // 从文件读入
+    static Graph* createFromFile(const string& filename); // 从文件读入
     static Graph* createRandom(int vertices, double density = 0.3); // 随机创建
-    static bool saveToFile(const Graph& graph, const std::string& filename); // 写入文件
+    static bool saveToFile(const Graph& graph, const string& filename); // 写入文件
 };
 
 // 模板函数，可参考
 
 template <typename T>
-T min(T a, T b)
+T min2(T a, T b)
 {
     return a < b ? a : b;
 }
 
 template <typename T>
-int find(const std::vector<T>& vec, const T& value)
+int find(const vector<T>& vec, const T& value)
 {
     for (size_t i = 0; i < vec.size(); i++) {
         if (vec[i] == value)
@@ -79,18 +81,18 @@ inline int randomInt(int min, int max)
 {
     static bool seeded = false;
     if (!seeded) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
+        srand(static_cast<unsigned>(time(nullptr)));
         seeded = true;
     }
-    return min + (std::rand() % (max - min + 1));
+    return min + (rand() % (max - min + 1));
 }
 
 inline double randomDouble()
 {
     static bool seeded = false;
     if (!seeded) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
+        srand(static_cast<unsigned>(time(nullptr)));
         seeded = true;
     }
-    return static_cast<double>(std::rand()) / RAND_MAX;
+    return static_cast<double>(rand()) / RAND_MAX;
 }

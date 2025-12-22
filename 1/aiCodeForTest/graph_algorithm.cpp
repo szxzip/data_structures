@@ -14,7 +14,7 @@ void Graph::DFS(int u)
             parent[v] = u;
             DFS(v); // 对该邻居递归调用
 
-            low[u] = min(low[u], low[v]); // 通过孩子可能到达更早经过的节点，因此更新值
+            low[u] = min2(low[u], low[v]); // 通过孩子可能到达更早经过的节点，因此更新值
 
             if (parent[u] == -1 && children > 1) { // 对于根节点，用孩子的数量进行判断即可，>=2为关节点
                 articulationPoints[u] = true;
@@ -24,7 +24,7 @@ void Graph::DFS(int u)
                 articulationPoints[u] = true;
             }
         } else if (v != parent[u]) { // 处理环路情况，即通过环路回到了更早已经经过的邻居节点的情况
-            low[u] = min(low[u], disc[v]);
+            low[u] = min2(low[u], disc[v]);
         }
     }
 }
@@ -47,9 +47,9 @@ void Graph::findArticulationPoints()
     }
 }
 
-std::vector<int> Graph::getArticulationPoints() const // 获取关节点列表
+vector<int> Graph::getArticulationPoints() const // 获取关节点列表
 {
-    std::vector<int> result;
+    vector<int> result;
     for (int i = 0; i < V; i++) { // 拿articulation数组直接遍历
         if (articulationPoints[i]) {
             result.push_back(i);
