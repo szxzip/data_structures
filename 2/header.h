@@ -54,10 +54,10 @@ public:
     MatchingResult solve(const SatisfactionMatrix& matrix); // 计算配对结果
 };
 
-// 暴力搜索
+// 暴力搜索 (C)
 MatchingResult bruteSearch(const SatisfactionMatrix& matrix);
 
-// 算法结果对比
+// 算法结果对比 (C)
 struct AlgorithmComparison {
     MatchingResult hungarian; // 匈牙利算法结果
     MatchingResult bruteForce; // 暴力搜索结果
