@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <climits> // 整数极限
-#include <cmath> // 用于tgamma函数计算阶乘
+#include <cmath>
 #include <fstream>
 #include <gtk/gtk.h>
 #include <iomanip> // 输入输出格式化
@@ -13,6 +13,8 @@
 #include <vector>
 
 using namespace std;
+
+extern bool enable_verification; // 是否启用验证
 
 // 矩阵数据结构（B）
 class SatisfactionMatrix {
@@ -44,7 +46,7 @@ private:
     vector<int> matchX, matchY; // 匹配结果 matchX[i]=j表示男i匹配女j
     vector<bool> visitedX, visitedY; // DFS搜索时的访问标记
     vector<int> slack; // 松弛量，用于顶标调整
-    int N; // 问题规模
+    int n; // 问题规模
     bool dfs(int u); // DFS深度优先搜索，在相等子图中寻找增广路
 
 public:
@@ -53,13 +55,13 @@ public:
 };
 
 // 暴力搜索
-MatchingResult bruteForce(const SatisfactionMatrix& matrix);
+MatchingResult bruteSearch(const SatisfactionMatrix& matrix);
 
 // 算法结果对比
 struct AlgorithmComparison {
     MatchingResult hungarian; // 匈牙利算法结果
     MatchingResult bruteForce; // 暴力搜索结果
-    int N; // 问题规模
+    int n; // 问题规模
     bool isOptimal; // 匈牙利算法是否找到最优解
     int scoreDifference; // 分数差值（暴力-匈牙利）
 

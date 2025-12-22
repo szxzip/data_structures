@@ -1,59 +1,5 @@
 #include "header.h"
 
-/**
- * @brief 验证匈牙利算法的结果
- */
-AlgorithmComparison verify_hungarian_result(
-    const SatisfactionMatrix& matrix,
-    const MatchingResult& hungarian_result,
-    double hungarian_time)
-{
-
-    AlgorithmComparison comparison(matrix.n);
-    comparison.hungarian = hungarian_result;
-    comparison.hungarianTime = hungarian_time;
-    comparison.n = matrix.n;
-
-    // 检查是否启用验证
-    if (!enable_verification) {
-        cout << "[验证] 验证功能已禁用" << endl;
-        comparison.isOptimal = true;
-        comparison.scoreDifference = 0;
-        return comparison;
-    }
-
-    // 检查规模是否适合验证
-    if (matrix.n > 10) {
-        cout << "[验证] 跳过验证，n=" << matrix.n << " 太大（建议n≤10）" << endl;
-        comparison.isOptimal = true;
-        comparison.scoreDifference = 0;
-        return comparison;
-    }
-
-    cout << "\n=== 开始暴力搜索验证 ===" << endl;
-    cout << "问题规模: n = " << matrix.n << endl;
-
-    // 使用暴力搜索求解
-    BruteForceSolver bruteSolver;
-    auto brute_start = chrono::high_resolution_clock::now();
-    MatchingResult bruteResult = bruteSolver.solve(matrix);
-    auto brute_end = chrono::high_resolution_clock::now();
-
-    comparison.bruteForceTime = chrono::duration_cast<chrono::milliseconds>(
-        brute_end - brute_start)
-                                    .count();
-    comparison.bruteForce = bruteResult;
-
-    // 比较结果
-    comparison.scoreDifference = bruteResult.totalScore - hungarian_result.totalScore;
-    comparison.isOptimal = (comparison.scoreDifference == 0);
-
-    // 显示对比结果
-    comparison.displayComparison();
-
-    return comparison;
-}
-
 // 从文件加载矩阵数据
 bool loadMatrixFromFile(const string& filename, SatisfactionMatrix& matrix)
 {
