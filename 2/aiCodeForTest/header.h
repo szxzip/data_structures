@@ -18,6 +18,7 @@ extern bool enable_verification; // 是否启用验证
 // 矩阵数据结构（B）
 class SatisfactionMatrix {
 public:
+    // 满意度取值为 0-100
     vector<vector<int>> mf; // 男对女满意度矩阵 (n x n)
     vector<vector<int>> fm; // 女对男满意度矩阵 (n x n)
     int n; // 运动员数量
@@ -40,13 +41,13 @@ public:
 // 匈牙利算法（A）
 class HungarianAlgorithm {
 private:
-    vector<vector<int>> total; // 成本矩阵（用于最小权匹配）
-    vector<int> ex, ey; // 顶标（X部和Y部顶点的标签值）
+    vector<vector<int>> total; // 总的期望矩阵 就是把男女对彼此的期望相加
+    vector<int> ex, ey; // 男女期望
     vector<int> matchX, matchY; // 匹配结果 matchX[i]=j表示男i匹配女j
     vector<bool> visitedX, visitedY; // DFS搜索时的访问标记
-    vector<int> slack; // 松弛量，用于顶标调整
+    vector<int> slack; // 松弛量，用于调整期望
     int n; // 问题规模
-    bool dfs(int u); // DFS深度优先搜索，在相等子图中寻找增广路
+    bool dfs(int u); // DFS深度优先搜索，为某一位男队员匹配，返回成功与否
 
 public:
     HungarianAlgorithm(); // 构造函数
@@ -73,8 +74,8 @@ AlgorithmComparison verify_hungarian_result(const SatisfactionMatrix& matrix, co
  * 读写文件 (C)
  * 文件格式：
  * 第一行：n（运动员数量）
- * n行：男对女矩阵（n×n）
- * n行：女对男矩阵（n×n）
+ * n行：男评价女（n×n）
+ * n行：女评价男（n×n）
  */
 bool loadMatrixFromFile(const string& filename, SatisfactionMatrix& matrix);
 void saveMatrixToFile(const string& filename, const SatisfactionMatrix& matrix);
