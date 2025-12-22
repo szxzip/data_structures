@@ -2,9 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 
-/**
- * @brief AlgorithmComparison构造函数
- */
+// 构造函数
 AlgorithmComparison::AlgorithmComparison(int size)
     : hungarian(size)
     , bruteForce(size)
@@ -16,9 +14,7 @@ AlgorithmComparison::AlgorithmComparison(int size)
 {
 }
 
-/**
- * @brief 显示算法对比结果
- */
+// 显示算法对比结果
 void AlgorithmComparison::displayComparison() const
 {
     cout << "\n========== 算法结果对比 ==========" << endl;
