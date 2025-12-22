@@ -2,7 +2,6 @@
 #define HEADER_H
 
 #include <algorithm>
-#include <climits> // 整数极限
 #include <cmath>
 #include <fstream>
 #include <gtk/gtk.h>
