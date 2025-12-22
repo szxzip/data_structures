@@ -5,7 +5,6 @@
 #include <cmath>
 #include <fstream>
 #include <gtk/gtk.h>
-#include <iomanip> // 输入输出格式化
 #include <iostream>
 #include <sstream>
 #include <string>
